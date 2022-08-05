@@ -7,5 +7,9 @@
         public string BTC { get; set; }
 
         public string USDT { get; set; }
+
+        public string BTCFTX { get; set; }
+
+        public string USDTFTX { get; set; }
     }
 }
