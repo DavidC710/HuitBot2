@@ -6,13 +6,17 @@ export class FetchData extends Component {
 
     constructor(props) {
         super(props);
-        this.state = { coins: [], loading: true, exchange: 'binance' };
+        this.state = { coins: [], coinsRender: [], loading: true, exchange: 'binance' };
         this.onValueChange = this.onValueChange.bind(this);
     }
 
     onValueChange(event) {
+        let coins = this.state.coins;
+        let coinsRender = event.target.value == 'binance' ? coins[0] : coins[1];
+
         this.setState({
-            exchange: event.target.value
+            exchange: event.target.value,
+            coinsRender: coinsRender,
         });
     }
 
@@ -20,10 +24,10 @@ export class FetchData extends Component {
         this.populateCoinsData();
     }
 
-    static renderCoinsTable(coins, exchange, handler) {
+    static renderCoinsTable(coinsRender, exchange, onChange, onReload) {
 
-        function sendOrder(val1, val2, val3, val4, val5, val6) {
-            let obj = JSON.stringify({ seller: val1, buyer: val2, price: val3, quantity: val4, ask: val5, lastPrice: val6 });
+        function sendOrder(val1, val2, val3, val4, val5, val6, exchange) {
+            let obj = JSON.stringify({ seller: val1, buyer: val2, price: val3, quantity: val4, ask: val5, lastPrice: val6, exchange: exchange });
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,20 +45,13 @@ export class FetchData extends Component {
             e.quantity = current.currentTarget.value;
         };
 
-        function reloadPage(e) {
-            window.location.reload(false);
-        };
-
-
-
         return (
             <div>
                 <br />
-                <h1>BTC/USDT Price: ${coins[1].btc}</h1>
-                <h1>ETH/USDT Price: ${coins[1].eth}</h1>
+                <h1>BTC/USDT Price: ${coinsRender.btc}</h1>
+                <h1>ETH/USDT Price: ${coinsRender.eth}</h1>
                 <button className="btn btn-primary"
-                    onClick={(event) => reloadPage()}
-                >Reload prices</button>
+                    onClick={onReload}>Reload prices</button>
                 <br />
                 <div className="radio">
                     <label>
@@ -62,7 +59,7 @@ export class FetchData extends Component {
                             type="radio"
                             value="binance"
                             checked={exchange === "binance"}
-                            onChange={handler}
+                            onChange={onChange}
                         />
                         Binance
                     </label>
@@ -73,7 +70,7 @@ export class FetchData extends Component {
                             type="radio"
                             value="ftx"
                             checked={exchange === "ftx"}
-                            onChange={handler}
+                            onChange={onChange}
                         />
                         FTX
                     </label>
@@ -89,7 +86,7 @@ export class FetchData extends Component {
                         </tr>
                     </thead>
                     <tbody>
-                        {coins[1].coins.map(
+                        {coinsRender?.coins?.map(
                             coin =>
                                 <tr key={coin.symbol}>
                                     <td>{coin.symbol}</td>
@@ -99,7 +96,7 @@ export class FetchData extends Component {
                                     </td>
                                     <td>
                                         <button className="btn btn-primary"
-                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice)}
+                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice, exchange)}
                                         >Send Order</button>
                                     </td>
                                 </tr>
@@ -113,7 +110,7 @@ export class FetchData extends Component {
     render() {
         let contents = this.state.loading
             ? <p><em>Loading...</em></p>
-            : FetchData.renderCoinsTable(this.state.coins, this.state.exchange, this.onValueChange);
+            : FetchData.renderCoinsTable(this.state.coinsRender, this.state.exchange, this.onValueChange, this.componentDidMount);
 
         return (
             <div>
@@ -126,7 +123,7 @@ export class FetchData extends Component {
     async populateCoinsData() {
         const response = await fetch('arbitrage');
         const data = await response.json();
-        this.setState({ coins: data, loading: false, exchange: 'binance'});
+        this.setState({ coins: data, coinsRender: this.exchange == 'binance' ? data[0] : data[1], loading: false});
     }
 
 }

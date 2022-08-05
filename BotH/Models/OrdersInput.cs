@@ -8,5 +8,6 @@
         public decimal quantity { get; set; }
         public decimal ask { get; set; }
         public decimal lastPrice { get; set; }
+        public string exchange { get; set; }
     }
 }

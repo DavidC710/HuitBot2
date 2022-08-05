@@ -18,7 +18,7 @@ namespace BotH.Controllers
         [HttpPost]
         public async Task<ResponseMessage> CreateOrder(OrdersInput order)
         {
-            var coinsConfig = _configuration["BaseCoins"];
+            var coinsConfig = _configuration["BaseCoinsBinance"];
             var coinsL = coinsConfig.Split(';');
             var baseCoins = new List<string>();
             var mainBaseCoin = string.Empty;
