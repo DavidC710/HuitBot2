@@ -1,6 +1,4 @@
 ﻿
-using FTX.Net.Objects.Models;
-
 namespace BotH.Controllers
 {
     [ApiController]

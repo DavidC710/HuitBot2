@@ -6,6 +6,7 @@ global using FTX.Net.Clients;
 global using System;
 global using CryptoExchange.Net.Authentication;
 global using Microsoft.AspNetCore.Mvc;
+global using FTX.Net.Objects.Models;
 
 // Namespaces
 global using BotH.Models;
