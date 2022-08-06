@@ -1,4 +1,7 @@
 ﻿
+using CryptoExchange.Net.CommonObjects;
+using FTX.Net.Objects;
+
 namespace BotH.Controllers
 {
     [ApiController]
@@ -19,14 +22,13 @@ namespace BotH.Controllers
         public async Task<ResponseMessage> CreateOrder(OrdersInput order)
         {
             var coinsConfig = _configuration["BaseCoinsBinance"];
+            var coinsFTXConfig = _configuration["BaseCoinsFTX"];
             var coinsL = coinsConfig.Split(';');
+            var coinsFTXL = coinsFTXConfig.Split(';');
             var baseCoins = new List<string>();
+            var baseFTXCoins = new List<string>();
             var mainBaseCoin = string.Empty;
-
-            var client = new BinanceClient(new BinanceClientOptions
-            {
-                ApiCredentials = new ApiCredentials(_configuration["ApiKey"], _configuration["ApiSecret"])
-            });
+            var mainBaseFTXCoin = string.Empty;
 
             if (coinsL.Any())
             {
@@ -37,6 +39,15 @@ namespace BotH.Controllers
                 mainBaseCoin = baseCoins.FirstOrDefault();
             }
 
+            if (coinsFTXL.Any())
+            {
+                foreach (var coinFTXL in coinsFTXL)
+                {
+                    baseFTXCoins.Add(coinFTXL);
+                }
+                mainBaseFTXCoin = baseFTXCoins.FirstOrDefault();
+            }
+
             var ordersList = new List<NewOrder>();
             var cont = 1;
             try
@@ -44,41 +55,79 @@ namespace BotH.Controllers
                 ordersList.Add(new NewOrder(OrderSide.Buy)
                 {
                     symbol = order.buyer,
-                    quantity = Math.Round(order.quantity / order.ask, 0),
+                    quantity = Math.Round(order.quantity / order.ask, 3),
                     price = order.price,
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = Math.Round(order.quantity / order.ask, 0),
+                    quantity = Math.Round(order.quantity / order.ask, 3),
                     price = order.ask,
                 });
 
-                ordersList.Add(new NewOrder(OrderSide.Buy)
+                if (order.exchange == "ftx")
                 {
-                    symbol = mainBaseCoin,
-                    quantity = Math.Round(order.quantity / order.lastPrice, 5),
-                    price = order.lastPrice,
-                });
+                    ordersList.Add(new NewOrder(OrderSide.Buy)
+                    {
+                        symbol = mainBaseFTXCoin,
+                        quantity = Math.Round(order.quantity / order.lastPrice, 5),
+                        price = order.lastPrice,
+                    });
+                }
+                else {
+                    ordersList.Add(new NewOrder(OrderSide.Buy)
+                    {
+                        symbol = mainBaseCoin,
+                        quantity = Math.Round(order.quantity / order.lastPrice, 5),
+                        price = order.lastPrice,
+                    });
+                }
+              
 
                 var resui = new ResponseMessage();
 
-                foreach (var ord in ordersList)
+                if (order.exchange == "binance")
                 {
-                    await client.SpotApi.Trading.PlaceOrderAsync(
-                        ord.symbol,
-                        ord.orderSide,
-                        ord.spotOrderType,
-                        ord.quantity, null, null,
-                        (decimal)ord.price,
-                        timeInForce: ord.timeInForce);
-                    cont += 1;
-                    resui.Message = ""; 
+                    foreach (var ord in ordersList)
+                    {
+                        var client = new BinanceClient(new BinanceClientOptions
+                        {
+                            ApiCredentials = new ApiCredentials(_configuration["ApiKey"], _configuration["ApiSecret"])
+                        });
+
+                        await client.SpotApi.Trading.PlaceOrderAsync(
+                            ord.symbol,
+                            ord.orderSide,
+                            ord.spotOrderType,
+                            ord.quantity, null, null,
+                            (decimal)ord.price,
+                            timeInForce: ord.timeInForce);
+                        cont += 1;
+                        resui.Message += "";
+                    }
+                }
+                else
+                {
+                    foreach (var ord in ordersList)
+                    {
+                        var ftxClient = new FTXClient();
+                        ftxClient.SetApiCredentials(new ApiCredentials(_configuration["FTXApiKey"], _configuration["FTXApiSecret"]));
+                        var trer = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
+
+                        await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                            ord.symbol,
+                            (CommonOrderSide)ord.orderSide,
+                            (CommonOrderType)ord.spotOrderType,
+                            ord.quantity,
+                            (decimal)ord.price);
+                        cont += 1;
+                        resui.Message = "";
+                    }
                 }
 
 
-                resui.Message = "All orders placed succesfully.";
+                resui.Message += "All orders placed succesfully.";
 
                 return resui;
             }
@@ -249,7 +298,7 @@ namespace BotH.Controllers
             result.Add(binanceResult);
             result.Add(ftxResult);
 
-            
+
             return result;
         }
     }
