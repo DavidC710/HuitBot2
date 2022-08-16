@@ -9,5 +9,6 @@
         public decimal ask { get; set; }
         public decimal lastPrice { get; set; }
         public string exchange { get; set; }
+        public string percentage { get; set; }
     }
 }

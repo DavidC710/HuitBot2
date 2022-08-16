@@ -50,6 +50,8 @@ namespace BotH.Controllers
 
             var ordersList = new List<NewOrder>();
             var cont = 1;
+            var numberP = order.percentage.Split('%');
+            decimal percentage = Convert.ToDecimal(numberP[0]) + 1;
             try
             {
                 ordersList.Add(new NewOrder(OrderSide.Buy)
@@ -58,6 +60,8 @@ namespace BotH.Controllers
                     quantity = Math.Round(order.quantity / order.ask, 3),
                     price = order.price,
                 });
+
+                var lastQ = Math.Round(order.quantity / order.ask, 3) * order.price;
 
                 ordersList.Add(new NewOrder(OrderSide.Sell)
                 {
@@ -71,19 +75,19 @@ namespace BotH.Controllers
                     ordersList.Add(new NewOrder(OrderSide.Buy)
                     {
                         symbol = mainBaseFTXCoin,
-                        quantity = Math.Round(order.quantity / order.lastPrice, 5),
+                        quantity = Math.Round(lastQ * percentage, 3),
                         price = order.lastPrice,
                     });
                 }
-                else {
+                else
+                {
                     ordersList.Add(new NewOrder(OrderSide.Buy)
                     {
                         symbol = mainBaseCoin,
-                        quantity = Math.Round(order.quantity / order.lastPrice, 5),
+                        quantity = Math.Round(lastQ * percentage, 5),
                         price = order.lastPrice,
                     });
                 }
-              
 
                 var resui = new ResponseMessage();
 
@@ -235,8 +239,8 @@ namespace BotH.Controllers
             IEnumerable<BinanceBookPrice> coinsDataBinance = callResult.Data;
             IEnumerable<FTXSymbol> coinsDataFTX = symbolssDataFTX.Data;
 
-            btcUsdtBidBinance = (decimal)coinsDataBinance.FirstOrDefault(t => t.Symbol == mainBaseCoin).BestBidPrice;
-            ethUsdtBidBinance = (decimal)coinsDataBinance.FirstOrDefault(t => t.Symbol == secondBaseCoin).BestBidPrice;
+            btcUsdtBidBinance = (decimal)coinsDataBinance.FirstOrDefault(t => t.Symbol == mainBaseCoin)!.BestBidPrice;
+            ethUsdtBidBinance = (decimal)coinsDataBinance.FirstOrDefault(t => t.Symbol == secondBaseCoin)!.BestBidPrice;
 
             btcUsdtBidFTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == mainBaseCoinFTX).BestBidPrice;
             ethUsdtBidFTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == secondBaseCoinFTX).BestBidPrice;

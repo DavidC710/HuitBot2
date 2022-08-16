@@ -26,8 +26,9 @@ export class FetchData extends Component {
 
     static renderCoinsTable(coinsRender, exchange, onChange, onReload) {
 
-        function sendOrder(val1, val2, val3, val4, val5, val6, exchange) {
-            let obj = JSON.stringify({ seller: val1, buyer: val2, price: val3, quantity: val4, ask: val5, lastPrice: val6, exchange: exchange });
+        function sendOrder(val1, val2, val3, val4, val5, val6, exchange, percentage) {
+            console.log(percentage);
+            let obj = JSON.stringify({ seller: val1, buyer: val2, price: val3, quantity: val4, ask: val5, lastPrice: val6, exchange: exchange, percentage: percentage });
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -96,7 +97,7 @@ export class FetchData extends Component {
                                     </td>
                                     <td>
                                         <button className="btn btn-primary"
-                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice, exchange)}
+                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice, exchange, coin.percentage)}
                                         >Send Order</button>
                                     </td>
                                 </tr>
