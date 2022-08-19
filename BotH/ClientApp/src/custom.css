@@ -1,18 +1,37 @@
 /* Provide sufficient contrast against white background */
-a {
-  color: #0366d6;
-}
-
-code {
-  color: #E01A76;
+.bgC {
+    background-color: #111111 !important;
+    height: 969px !important;
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+    color: #343434;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
 }
 
 .tableTitle {
-    color: #E3330D;
+    color: #FFFFFF;
+}
+
+.rowC {
+    display: flex;
+    flex-direction: row;
+}
+
+.rowC-element {
+    padding-left: 30px !important;
+    color: #FFFFFF;
+}
+
+.tableData {
+    color: #FFFFFF;
+}
+
+.dot {
+    height: 25px;
+    width: 25px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
 }

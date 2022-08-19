@@ -21,8 +21,11 @@ export class FetchData extends Component {
     }
 
     componentDidMount() {
-        console.log(this.populateCoinsData);
-        this.populateCoinsData();
+        this.interval = setInterval(() => this.populateCoinsData(), 5000);
+    }
+
+    componentWillUnmount() {
+        clearInterval(this.interval);
     }
 
     static renderCoinsTable(coinsRender, exchange, onChange, onReload) {
@@ -50,11 +53,10 @@ export class FetchData extends Component {
         return (
             <div>
                 <br />
-                <h1>BTC/USDT Price: ${coinsRender.btc}</h1>
-                <h1>ETH/USDT Price: ${coinsRender.eth}</h1>
-                <button className="btn btn-primary"
-                    onClick={onReload}>Reload prices</button>
-                <br />
+                <div className='rowC'>
+                    <h4 className='rowC-element'>BTC/USDT Price: ${coinsRender.btc}</h4>
+                    <h4 className='rowC-element'>ETH/USDT Price: ${coinsRender.eth}</h4>
+                </div>
                 {/*<div className="radio">*/}
                 {/*    <label>*/}
                 {/*        <input*/}
@@ -78,12 +80,13 @@ export class FetchData extends Component {
                 {/*    </label>*/}
                 {/*</div>*/}
                 <br />
-                <table className='table table-striped' aria-labelledby="tabelLabel">
+                <table style={{ textAlign: 'center' }} className='table table-striped' aria-labelledby="tabelLabel">
                     <thead>
                         <tr>
                             <th className="tableTitle">Coin Name</th>
                             <th className="tableTitle">Arbitrage Percentage</th>
                             <th className="tableTitle">Quantity</th>
+                            <th className="tableTitle">State</th>
                             <th className="tableTitle">Action</th>
                         </tr>
                     </thead>
@@ -91,15 +94,21 @@ export class FetchData extends Component {
                         {coinsRender?.coins?.map(
                             coin =>
                                 <tr key={coin.symbol}>
-                                    <td>{coin.symbol}</td>
-                                    <td>{coin.percentage}</td>
+                                    <td className='tableData'>{coin.symbol}</td>
+                                    <td className='tableData'>{coin.percentage}</td>
                                     <td>
-                                        <input type="text" defaultValue={coin.quantity} onChange={(event) => onValChange(coin, event)} />
+                                        <input style={{textAlign: 'center'}} type="text" defaultValue={coin.quantity} onChange={(event) => onValChange(coin, event)} />
                                     </td>
                                     <td>
-                                        <button className="btn btn-primary"
-                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice, exchange, coin.percentage)}
-                                        >Send Order</button>
+                                        <div className="dot" style={{ backgroundColor: coin.hasOpendOrders == true ? '#D72C3A' : '#00740B' }}>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={(event) => sendOrder(coin.usdt, coin.btc, coin.price, coin.quantity, coin.firstQuantity, coin.lastPrice, exchange, coin.percentage)}>
+                                            Send Order
+                                        </button>
                                     </td>
                                 </tr>
                         )}
@@ -111,12 +120,11 @@ export class FetchData extends Component {
 
     render() {
         let contents = this.state.loading
-            ? <p><em>Loading...</em></p>
+            ? <p><em><div style={{color: '#FFFFFF'}}>Loading...</div></em></p>
             : FetchData.renderCoinsTable(this.state.coinsRender, this.state.exchange, this.onValueChange, this.componentDidMount);
 
         return (
             <div>
-                <h1 id="tabelLabel" >Coins' Arbitrage</h1>
                 {contents}
             </div>
         );
@@ -125,7 +133,7 @@ export class FetchData extends Component {
     async populateCoinsData() {
         const response = await fetch('arbitrage');
         const data = await response.json();
-        this.setState({ coins: data, coinsRender: data[0], loading: false});
+        this.setState({ coins: data, coinsRender: data[0], loading: false });
     }
 
 }

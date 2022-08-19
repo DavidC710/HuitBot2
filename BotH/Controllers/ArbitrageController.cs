@@ -215,6 +215,9 @@ namespace BotH.Controllers
 
             var ftxClient = new FTXClient();
             var symbolssDataFTX = await ftxClient.TradeApi.ExchangeData.GetSymbolsAsync();
+            ftxClient.SetApiCredentials(new ApiCredentials(_configuration["FTXApiKey"], _configuration["FTXApiSecret"]));
+            var myOrders = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
+
             var fullPath = @"C:\Users\ThermalTake\Documents\Bot\FTX Coins\data.csv";
 
             //if (!System.IO.File.Exists(fullPath))
@@ -271,8 +274,8 @@ namespace BotH.Controllers
                 //var binanceCoinBid = coinsDataBinance.FirstOrDefault(t => t.Symbol == coin.BTC).BestBidPrice;
                 //var binanceCoinAsk = coinsDataBinance.FirstOrDefault(t => t.Symbol == coin.USDT).BestAskPrice;
 
-                var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX).BestBidPrice;
-                var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX).BestAskPrice;
+                var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
+                var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
 
                 //var valBinance = (((1 / binanceCoinBid) * binanceCoinAsk) / btcUsdtBidBinance) > 1 ? (((1 / binanceCoinBid) * binanceCoinAsk) / btcUsdtBidBinance) - 1 : 0;
                 var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / btcUsdtBidFTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / btcUsdtBidFTX) - 1 : 0;
@@ -299,6 +302,7 @@ namespace BotH.Controllers
                     Quantity = 0,
                     FirstQuantity = Math.Round(ftxCoinAsk, 3),
                     LastPrice = Math.Round(btcUsdtBidFTX, 3),
+                    HasOpendOrders = (myOrders.Data.Where(t => t.Symbol == coin.BTCFTX).Any() || myOrders.Data.Where(t => t.Symbol == coin.USDTFTX).Any()) ? true : false,
                 });
             }
 
