@@ -6,13 +6,13 @@ export class FetchData extends Component {
 
     constructor(props) {
         super(props);
-        this.state = { coins: [], coinsRender: [], loading: true, exchange: 'binance' };
+        this.state = { coins: [], coinsRender: [], loading: true, exchange: 'ftx' };
         this.onValueChange = this.onValueChange.bind(this);
     }
 
     onValueChange(event) {
         let coins = this.state.coins;
-        let coinsRender = event.target.value == 'binance' ? coins[0] : coins[1];
+        let coinsRender = coins[0];
 
         this.setState({
             exchange: event.target.value,
@@ -21,6 +21,7 @@ export class FetchData extends Component {
     }
 
     componentDidMount() {
+        console.log(this.populateCoinsData);
         this.populateCoinsData();
     }
 
@@ -54,28 +55,28 @@ export class FetchData extends Component {
                 <button className="btn btn-primary"
                     onClick={onReload}>Reload prices</button>
                 <br />
-                <div className="radio">
-                    <label>
-                        <input
-                            type="radio"
-                            value="binance"
-                            checked={exchange === "binance"}
-                            onChange={onChange}
-                        />
-                        Binance
-                    </label>
-                </div>
-                <div className="radio">
-                    <label>
-                        <input
-                            type="radio"
-                            value="ftx"
-                            checked={exchange === "ftx"}
-                            onChange={onChange}
-                        />
-                        FTX
-                    </label>
-                </div>
+                {/*<div className="radio">*/}
+                {/*    <label>*/}
+                {/*        <input*/}
+                {/*            type="radio"*/}
+                {/*            value="binance"*/}
+                {/*            checked={exchange === "binance"}*/}
+                {/*            onChange={onChange}*/}
+                {/*        />*/}
+                {/*        Binance*/}
+                {/*    </label>*/}
+                {/*</div>*/}
+                {/*<div className="radio">*/}
+                {/*    <label>*/}
+                {/*        <input*/}
+                {/*            type="radio"*/}
+                {/*            value="ftx"*/}
+                {/*            checked={exchange === "ftx"}*/}
+                {/*            onChange={onChange}*/}
+                {/*        />*/}
+                {/*        FTX*/}
+                {/*    </label>*/}
+                {/*</div>*/}
                 <br />
                 <table className='table table-striped' aria-labelledby="tabelLabel">
                     <thead>
@@ -124,7 +125,7 @@ export class FetchData extends Component {
     async populateCoinsData() {
         const response = await fetch('arbitrage');
         const data = await response.json();
-        this.setState({ coins: data, coinsRender: this.exchange == 'binance' ? data[0] : data[1], loading: false});
+        this.setState({ coins: data, coinsRender: data[0], loading: false});
     }
 
 }
