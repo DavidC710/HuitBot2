@@ -85,8 +85,8 @@ export class FetchData extends Component {
                         <tr>
                             <th className="tableTitle">Coin Name</th>
                             <th className="tableTitle">Arbitrage Percentage</th>
-                            <th className="tableTitle">Quantity</th>
                             <th className="tableTitle">State</th>
+                            <th className="tableTitle">Quantity</th>
                             <th className="tableTitle">Action</th>
                         </tr>
                     </thead>
@@ -96,12 +96,13 @@ export class FetchData extends Component {
                                 <tr key={coin.symbol}>
                                     <td className='tableData'>{coin.symbol}</td>
                                     <td className='tableData'>{coin.percentage}</td>
-                                    <td>
-                                        <input style={{textAlign: 'center'}} type="text" defaultValue={coin.quantity} onChange={(event) => onValChange(coin, event)} />
-                                    </td>
+                                    
                                     <td>
                                         <div className="dot" style={{ backgroundColor: coin.hasOpendOrders == true ? '#D72C3A' : '#00740B' }}>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <input style={{ textAlign: 'center' }} type="text" defaultValue={coin.quantity} onChange={(event) => onValChange(coin, event)} />
                                     </td>
                                     <td>
                                         <button
