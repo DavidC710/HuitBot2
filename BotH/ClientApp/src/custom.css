@@ -19,6 +19,12 @@
     flex-direction: row;
 }
 
+.rowC-elementA {
+    padding-left: 30px !important;
+    color: #FFFFFF;
+    font-size: 17px !important;
+}
+
 .rowC-element {
     padding-left: 30px !important;
     color: #FFFFFF;

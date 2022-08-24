@@ -54,8 +54,8 @@ export class FetchData extends Component {
             <div>
                 <br />
                 <div className='rowC'>
-                    <h4 className='rowC-element'>BTC/USDT Price: ${coinsRender.btc}</h4>
-                    <h4 className='rowC-element'>ETH/USDT Price: ${coinsRender.eth}</h4>
+                    <h4 className='rowC-elementA'>BTC/USDT Price: ${coinsRender.btc}</h4>
+                    <h4 className='rowC-elementA'>ETH/USDT Price: ${coinsRender.eth}</h4><br />
                 </div>
                 {/*<div className="radio">*/}
                 {/*    <label>*/}

@@ -150,11 +150,15 @@ namespace BotH.Controllers
             var coinsConfigFTX = _configuration["BaseCoinsFTX"];
             var orderCoinsConfig = _configuration["OrderCoins"];
             var sufixesConfig = _configuration["Sufixes"];
+            var autoCoinsConfig = _configuration["AutomaticCoins"];
+            var timeAutoCoinsConfig = _configuration["Time"];
+            var HourMinutesConfig = _configuration["HourMinutes"];
 
             var mainBaseCoin = string.Empty;
             var secondBaseCoin = string.Empty;
             var mainBaseCoinFTX = string.Empty;
             var secondBaseCoinFTX = string.Empty;
+
             decimal btcUsdtBidBinance = 0;
             decimal ethUsdtBidBinance = 0;
             decimal btcUsdtBidFTX = 0;
@@ -164,6 +168,17 @@ namespace BotH.Controllers
             var coinsLFTX = coinsConfigFTX.Split(';');
             var orderCoinsL = orderCoinsConfig.Split(';');
             var sufixesL = sufixesConfig.Split(';');
+            var automaticCoins = autoCoinsConfig.Split(';');
+            var timeAutoCoins = timeAutoCoinsConfig.Split(';');
+            var HourMinutes = HourMinutesConfig.Split(';');
+
+            var automaticCoinsList = new List<string>();
+            foreach (var item in automaticCoins) {
+                automaticCoinsList.Add(item);
+            }
+
+            var date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day, Convert.ToInt16(HourMinutes.FirstOrDefault()), Convert.ToInt16(HourMinutes.LastOrDefault()), 0);
+
 
             var baseCoins = new List<string>();
             var baseCoinsFTX = new List<string>();
@@ -202,6 +217,7 @@ namespace BotH.Controllers
             {
                 foreach (var orderCoinL in orderCoinsL)
                 {
+                    var isAuto = automaticCoinsList.Where(t => t == orderCoinL).Any();
                     coins.Add(new Coin()
                     {
                         Symbol = orderCoinL,
@@ -209,11 +225,14 @@ namespace BotH.Controllers
                         USDT = orderCoinL + sufixes.LastOrDefault(),
                         BTCFTX = orderCoinL + "/" + sufixes.FirstOrDefault(),
                         USDTFTX = orderCoinL + "/" + sufixes.LastOrDefault(),
+                        IsAutomatic = isAuto,
                     });
                 }
             }
 
-            var ftxClient = new FTXClient();
+           
+
+                var ftxClient = new FTXClient();
             var symbolssDataFTX = await ftxClient.TradeApi.ExchangeData.GetSymbolsAsync();
             ftxClient.SetApiCredentials(new ApiCredentials(_configuration["FTXApiKey"], _configuration["FTXApiSecret"]));
             var myOrders = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
@@ -268,6 +287,35 @@ namespace BotH.Controllers
             ftxResult.Coins = new List<CoinsList>();
             ftxResult.BTC = btcPagePriceFTX;
             ftxResult.ETH = ethPagePriceFTX;
+
+            foreach (var coin in coins)
+            {
+                var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
+                var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
+                var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / btcUsdtBidFTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / btcUsdtBidFTX) - 1 : 0;
+
+                if (coin.IsAutomatic)
+                {
+                    var openedOrders = (myOrders.Data.Where(t => t.Symbol == coin.BTCFTX).Any() || myOrders.Data.Where(t => t.Symbol == coin.USDTFTX).Any()) ? true : false;
+                    var perc = Math.Round(((valFTX / 1) * 100), 5);
+
+                    if (perc > (decimal)0.02 && !openedOrders && DateTime.Now >= date && DateTime.Now <= date.AddMinutes(Convert.ToDouble(timeAutoCoins.FirstOrDefault()))) {
+                        await CreateOrder(new OrdersInput()
+                        {
+                            seller = coin.USDTFTX,
+                            buyer = coin.BTCFTX,
+                            price = ftxCoinBid,
+                            quantity = (decimal)0.0005,
+                            ask = Math.Round(ftxCoinAsk, 3),
+                            lastPrice = Math.Round(btcUsdtBidFTX, 3),
+                            exchange = "ftx",
+                            percentage = Math.Round(((valFTX / 1) * 100), 5).ToString() + "%",
+                        });
+                    }
+                }
+            }
+
+            myOrders = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
 
             foreach (var coin in coins)
             {

@@ -11,5 +11,7 @@
         public string BTCFTX { get; set; }
 
         public string USDTFTX { get; set; }
+
+        public bool IsAutomatic { get; set; }
     }
 }
