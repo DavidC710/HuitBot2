@@ -51,8 +51,6 @@ namespace BotH.Controllers
 
                 foreach (var ord in ordersList)
                 {
-                    var trer = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
-
                     var orderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                         ord.symbol,
                         (CommonOrderSide)ord.orderSide,

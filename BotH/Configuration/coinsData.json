@@ -46,10 +46,9 @@
 	"AutomaticProcess_Coins":
 	[
 		{ 
-			"Exchange": "FTX", 
-			"ConfigCoins":
-			[	
-				{ "Name": "ETH"}
+			"Exchange": "FTX",
+			"ConfigCoins": [
+				{ "Name": "ETH" }
 			]
 		}
 	],
@@ -57,5 +56,5 @@
 	"StartProcess_Hour" : "08",
 	"StartProcess_Minute": "45",
 	"DefaultQuantity": 0.0005,
-	"ArbitragePercentageValue":  0.2
+	"ArbitragePercentageValue":  0.10
 }
