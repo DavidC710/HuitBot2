@@ -1,0 +1,61 @@
+{
+	"Exchange_ApiData":
+	[
+		{
+			"Exchange" : "FTX",
+			"ApiKey": "X_EZGH4CgOY67lNjECY0xTidPQxP3F8OlXvQqK-i",
+			"Secret":"8uWvmB6ho9RXZJG6wr0ycAL3-pGJNnwZ7wbZ8ibw"
+		}
+	],
+	"Sufixes":
+	[
+		{
+			"Sufix":"BTC"
+		},
+		{
+			"Sufix":"USDT"
+		}
+	],
+	"BaseCoins":
+	[
+		{
+			"Exchange": "FTX",
+			"ConfigCoins": 
+			[	
+				{
+					"Name":	"BTC/USDT"
+				},
+				{
+					"Name":"ETH/USDT"
+				}
+			]
+		}		
+	],
+	"TradeCoins":
+	[
+		{ "Name": "ETH"},
+		{ "Name": "DOT"},
+		{ "Name": "LTC"},
+		{ "Name": "LINK"},
+		{ "Name": "SUSHI"},
+		{ "Name": "XRP"},
+		{ "Name": "AVAX"},
+		{ "Name": "BNB"},
+		{ "Name": "UNI"}
+	],
+	"AutomaticProcess_Coins":
+	[
+		{ 
+			"Exchange": "FTX", 
+			"ConfigCoins":
+			[	
+				{ "Name": "ETH"}
+			]
+		}
+	],
+	"AutomaticProcess_Duration" : 5,
+	"StartProcess_Hour" : "08",
+	"StartProcess_Minute": "45",
+	"DefaultQuantity": 0.0005,
+	"ArbitragePercentageValue":  0.2
+}
