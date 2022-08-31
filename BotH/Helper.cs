@@ -48,5 +48,21 @@
         public string Name { get; set; }
     }
 
+    public class ReportCoinsList
+    {
+        public ReportCoinsList() {
+            CoinsList = new List<ReportCoins>(); 
+        }
+        public List<ReportCoins> CoinsList { get; set; }
+    }
 
+    public class ReportCoins
+    {
+        public ReportCoins() {
+            Orders = new List<FTXOrder>();
+        }
+        public string CoinName { get; set; }
+        public int Order { get; set; }
+        public List<FTXOrder> Orders { get; set; }
+    }
 }
