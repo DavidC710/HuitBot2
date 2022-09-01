@@ -144,7 +144,7 @@ namespace BotH.Controllers
                         var btcBuy = btcOrder.QuantityFilled - quantity;
                         var btcPrice = btcOrder.AverageFillPrice == 0 ? "FALSO" : (btcOrder.AverageFillPrice).ToString();
                         var error = (item.Orders.FirstOrDefault()!.AverageFillPrice == null || item.Orders.LastOrDefault()!.AverageFillPrice == null) ? (btcOrder.Symbol + "Price: $" +
-                            btcOrder.Price.ToString() + ", Quantity" + btcOrder.Quantity.ToString()
+                            btcOrder.Price.ToString() + ", Quantity: " + btcOrder.Quantity.ToString()
                             + ". " + item.Orders.FirstOrDefault()!.Symbol + "Price: $" +
                             item.Orders.FirstOrDefault()!.Price.ToString() + ", Quantity: " + item.Orders.FirstOrDefault()!.Quantity.ToString()
                             + ". " + item.Orders.LastOrDefault()!.Symbol + "Price: $" +
@@ -230,7 +230,7 @@ namespace BotH.Controllers
                                             ? true : false;
                         var perc = Math.Round(((valFTX / 1) * 100), 5);
 
-                        if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= date.AddMinutes(Convert.ToDouble(configuration.StartProcess_Minute)))
+                        if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration)))
                         {
                             await CreateOrder(new OrdersInput()
                             {
