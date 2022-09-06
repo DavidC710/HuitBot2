@@ -11,7 +11,7 @@ namespace BotH.Controllers
 
         public ArbitrageController()
         {
-            string path = @"D:\Documents\Repos\BotH\BotH\Configuration\coinsData.json";
+            string path = @"C:\Users\ThermalTake\source\repos\HuitB\BotH\Configuration\coinsData.json";
             this.configuration = JsonConvert.DeserializeObject<Root>(System.IO.File.ReadAllText(path))!;
             now = DateTime.Today;
         }
