@@ -78,8 +78,8 @@ namespace BotH.Controllers
             try
             {
                 var fullPath = @"C:\Users\ThermalTake\Documents\Bot\Reportes\data_" +
-                        //var fullPath = @"D:\Documents\DCC\data_" +
-                        now.Date.AddDays(-1).Year.ToString()
+                //var fullPath = @"D:\Documents\DCC\data_" +
+                now.Date.AddDays(-1).Year.ToString()
                         + now.Date.AddDays(-1).Month.ToString()
                         + now.Date.AddDays(-1).Day.ToString() + ".csv";
                 if (System.IO.File.Exists(fullPath)) return null;
@@ -229,8 +229,9 @@ namespace BotH.Controllers
                                             opnOrders.Data.Where(t => t.Symbol == coin.USDTFTX).Any())
                                             ? true : false;
                         var perc = Math.Round(((valFTX / 1) * 100), 5);
+                        var refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
 
-                        if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration)))
+                        if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= refDate)
                         {
                             await CreateOrder(new OrdersInput()
                             {
@@ -245,18 +246,25 @@ namespace BotH.Controllers
                             });
                         }
                     }
-
-
                 }
 
                 var myOrdersInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
                 var myOrders = myOrdersInfo.Data;
-
                 foreach (var coin in coins)
                 {
                     var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
                     var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
                     var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
+                    var refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
+                    var timeToFinish = "OFF";
+
+                    if (DateTime.Now >= date && DateTime.Now <= refDate) {
+                        TimeSpan ts = refDate - DateTime.Now;
+                        timeToFinish = "00:" + ts.Minutes.ToString().PadLeft(2, '0') + ":" + ts.Seconds.ToString().PadLeft(2, '0');
+                        
+                    }
+
+                    ftxResult.TimeToFinish = timeToFinish;
 
                     ftxResult.Coins.Add(new CoinsList()
                     {

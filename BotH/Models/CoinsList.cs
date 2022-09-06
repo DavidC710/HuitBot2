@@ -20,6 +20,7 @@
         public decimal BtcPrice { get; set; }
 
         public decimal EthPrice { get; set; }
+        public string TimeToFinish { get; set; }
         public bool HasOpendOrders { get; set; } = false;
     }
 }
