@@ -1,60 +1,62 @@
 {
-	"Exchange_ApiData":
-	[
+	"Exchange_ApiData": [
 		{
-			"Exchange" : "FTX",
+			"Exchange": "FTX",
 			"ApiKey": "X_EZGH4CgOY67lNjECY0xTidPQxP3F8OlXvQqK-i",
-			"Secret":"8uWvmB6ho9RXZJG6wr0ycAL3-pGJNnwZ7wbZ8ibw"
+			"Secret": "8uWvmB6ho9RXZJG6wr0ycAL3-pGJNnwZ7wbZ8ibw",
+			"ApiKeySub": "tlhIm0gXKQW_zI_2Xu6ImZMI0bm3w612WzZUWros",
+			"SecretSub": "cTlN-0FU6R0HE7xjcbjKzW_PbG2HGF7M6aUijoBq"
 		}
 	],
-	"Sufixes":
-	[
+	"Sufixes": [
 		{
-			"Sufix":"BTC"
+			"Sufix": "BTC"
 		},
 		{
-			"Sufix":"USDT"
+			"Sufix": "USDT"
 		}
 	],
-	"BaseCoins":
-	[
+	"BaseCoins": [
 		{
 			"Exchange": "FTX",
-			"ConfigCoins": 
-			[	
+			"ConfigCoins": [
 				{
-					"Name":	"BTC/USDT"
+					"Name": "BTC/USDT"
 				},
 				{
-					"Name":"ETH/USDT"
+					"Name": "ETH/USDT"
 				}
-			]
-		}		
-	],
-	"TradeCoins":
-	[
-		{ "Name": "ETH"},
-		{ "Name": "DOT"},
-		{ "Name": "LTC"},
-		{ "Name": "LINK"},
-		{ "Name": "SUSHI"},
-		{ "Name": "XRP"},
-		{ "Name": "AVAX"},
-		{ "Name": "BNB"},
-		{ "Name": "UNI"}
-	],
-	"AutomaticProcess_Coins":
-	[
-		{ 
-			"Exchange": "FTX",
-			"ConfigCoins": [
-				{ "Name": "ETH" }
 			]
 		}
 	],
-	"AutomaticProcess_Duration" : 5,
-	"StartProcess_Hour" : "08",
-	"StartProcess_Minute": "45",
+	"TradeCoins": [
+		{ "Name": "ETH" },
+		{ "Name": "DOT" },
+		{ "Name": "LTC" },
+		{ "Name": "LINK" },
+		{ "Name": "SUSHI" },
+		{ "Name": "XRP" },
+		{ "Name": "AVAX" },
+		{ "Name": "BNB" },
+		{ "Name": "UNI" }
+	],
+	"AutomaticProcess_Coins": [
+		{
+			"Exchange": "FTX",
+			"ConfigCoins": [
+				{ "Name": "LTC" },
+				{ "Name": "DOT" },
+				{ "Name": "XRP" },
+				{ "Name": "AVAX" }
+			]
+		}
+	],
+	"AutomaticProcess_Duration": 5,
+	"StartProcess_Hour": "10",
+	"StartProcess_Minute": "26",
 	"DefaultQuantity": 0.0005,
-	"ArbitragePercentageValue":  0.10
+	"ArbitragePercentageValue": 0.10,
+	"Loop_Duration": 5,
+	"LoopStart_Hour": "16",
+	"LoopStart_Minute": "16"
 }

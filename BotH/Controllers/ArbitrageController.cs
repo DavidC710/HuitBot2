@@ -11,7 +11,7 @@ namespace BotH.Controllers
 
         public ArbitrageController()
         {
-            string path = @"C:\Users\ThermalTake\source\repos\HuitB\BotH\Configuration\coinsData.json";
+            string path = @"D:\Documents\Repos\BotH\BotH\Configuration\coinsData.json";
             this.configuration = JsonConvert.DeserializeObject<Root>(System.IO.File.ReadAllText(path))!;
             now = DateTime.Today;
         }
@@ -77,8 +77,8 @@ namespace BotH.Controllers
         {
             try
             {
-                var fullPath = @"C:\Users\ThermalTake\Documents\Bot\Reportes\data_" +
-                //var fullPath = @"D:\Documents\DCC\data_" +
+                //var fullPath = @"C:\Users\ThermalTake\Documents\Bot\Reportes\data_" +
+                var fullPath = @"D:\Documents\DCC\data_" +
                 now.Date.AddDays(-1).Year.ToString()
                         + now.Date.AddDays(-1).Month.ToString()
                         + now.Date.AddDays(-1).Day.ToString() + ".csv";
@@ -222,17 +222,20 @@ namespace BotH.Controllers
                         var ordersBTCInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.BTCFTX);
                         var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.USDTFTX);
 
-                        var openedOrders = (
+                        bool openedOrders = (
                                             ordersBTCInfo.Data.Any() ||
                                             ordersUSDTInfo.Data.Any() ||
                                             opnOrders.Data.Where(t => t.Symbol == coin.BTCFTX).Any() ||
                                             opnOrders.Data.Where(t => t.Symbol == coin.USDTFTX).Any())
                                             ? true : false;
-                        var perc = Math.Round(((valFTX / 1) * 100), 5);
-                        var refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
+                        decimal perc = Math.Round(((valFTX / 1) * 100), 5);
+                        DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
+                        //bool haveToWait = (DateTime.Now.Minute == date.Minute) && (DateTime.Now.Hour == date.Hour);
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= refDate)
                         {
+                            //if(haveToWait) Thread.Sleep(60000);
+
                             await CreateOrder(new OrdersInput()
                             {
                                 seller = coin.USDTFTX,

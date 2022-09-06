@@ -1,31 +1,60 @@
 import React, { Component } from 'react';
 
 export class Counter extends Component {
-  static displayName = Counter.name;
+    static displayName = Counter.name;
 
-  constructor(props) {
-    super(props);
-    this.state = { currentCount: 0 };
-    this.incrementCounter = this.incrementCounter.bind(this);
-  }
+    constructor(props) {
+        super(props);
+        this.state = { currentCount: 0 };
+        this.incrementCounter = this.incrementCounter.bind(this);
+    }
 
-  incrementCounter() {
-    this.setState({
-      currentCount: this.state.currentCount + 1
-    });
-  }
+    incrementCounter(type) {
+        console.log(type);
+        this.setState({
+            currentCount: this.state.currentCount + 1
+        });
+    }
 
-  render() {
-    return (
-      <div>
-        <h1>Counter</h1>
+    render() {
 
-        <p>This is a simple example of a React component.</p>
+        function sendLoop(type) {
+            const top = document.getElementById('top').value
+            const floor = document.getElementById('floor').value
+            const quantity = document.getElementById('quantity').value
 
-        <p aria-live="polite">Current count: <strong>{this.state.currentCount}</strong></p>
+            let obj = JSON.stringify({ type: type, top: top, floor: floor, quantity: quantity });
 
-        <button className="btn btn-primary" onClick={this.incrementCounter}>Increment</button>
-      </div>
-    );
-  }
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: obj
+            };
+            fetch('loop', requestOptions)
+                .then(response => response.json())
+                .then(response => {
+                    console.log(response.message);
+                    alert(response.message);
+                });
+        }
+
+        return (
+            <div >
+                <h2 className='rowC-elementA'>BTC Loop</h2>
+                <br />
+                <div className='rowC'>
+                    <h2 className='rowC-elementA'>Top</h2>
+                    <input id='top' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
+                    <h2 className='rowC-elementA'>Floor</h2>
+                    <input id='floor' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
+                    <h2 className='rowC-elementA'>Quantity</h2>
+                    <input id='quantity' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
+                </div>
+                <br />
+                <br />
+                <button style={{ textAlign: 'center', marginLeft: '30px', width: '150px' }} className="btn btn-primary" onClick={(event) => sendLoop('BUY')}>Buy</button>
+                <button style={{ textAlign: 'center', marginLeft: '30px', width: '150px' }} className="btn btn-primary" onClick={(event) => sendLoop('SELL')}>Sell</button>
+            </div>
+        );
+    }
 }

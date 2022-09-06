@@ -22,6 +22,8 @@
         public string Exchange { get; set; }
         public string ApiKey { get; set; }
         public string Secret { get; set; }
+        public string ApiKeySub { get; set; }
+        public string SecretSub { get; set; }
     }
 
     public class Root
@@ -36,6 +38,9 @@
         public string StartProcess_Minute { get; set; }
         public decimal DefaultQuantity { get; set; }
         public decimal ArbitragePercentageValue { get; set; }
+        public int Loop_Duration { get; set; }
+        public string LoopStart_Hour { get; set; }
+        public string LoopStart_Minute { get; set; }
     }
 
     public class Sufixes

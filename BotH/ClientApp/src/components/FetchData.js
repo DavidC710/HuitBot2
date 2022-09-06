@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 export class FetchData extends Component {
     static displayName = FetchData.name;
 
-
     constructor(props) {
         super(props);
         this.state = { coins: [], coinsRender: [], loading: true, exchange: 'ftx' };
@@ -31,7 +30,6 @@ export class FetchData extends Component {
     static renderCoinsTable(coinsRender, exchange, onChange, onReload) {
 
         function sendOrder(val1, val2, val3, val4, val5, val6, exchange, percentage) {
-            console.log(percentage);
             let obj = JSON.stringify({ seller: val1, buyer: val2, price: val3, quantity: val4, ask: val5, lastPrice: val6, exchange: exchange, percentage: percentage });
             const requestOptions = {
                 method: 'POST',
