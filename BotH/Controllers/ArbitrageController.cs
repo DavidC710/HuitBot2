@@ -263,7 +263,7 @@ namespace BotH.Controllers
 
                     if (DateTime.Now >= date && DateTime.Now <= refDate) {
                         TimeSpan ts = refDate - DateTime.Now;
-                        timeToFinish = "00:" + ts.Minutes.ToString().PadLeft(2, '0') + ":" + ts.Seconds.ToString().PadLeft(2, '0');
+                        timeToFinish = ts.Hours.ToString().PadLeft(2, '0') + ":" + ts.Minutes.ToString().PadLeft(2, '0') + ":" + ts.Seconds.ToString().PadLeft(2, '0');
                         
                     }
 
