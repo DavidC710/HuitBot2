@@ -44,11 +44,17 @@ export class Counter extends Component {
                 <br />
                 <div className='rowC'>
                     <h2 className='rowC-elementA'>Top</h2>
-                    <input id='top' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
-                    <h2 className='rowC-elementA'>Floor</h2>
-                    <input id='floor' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
-                    <h2 className='rowC-elementA'>Quantity</h2>
-                    <input id='quantity' style={{ textAlign: 'center', marginLeft: '30px' }} type="text" />
+                    <input id='top' style={{ textAlign: 'center', marginLeft: '70px' }} type="text" />
+                </div>
+                <br />
+                <div className='rowC'>
+                    <h2 className='rowC-elementA'>Floor</h2><br />
+                    <input id='floor' style={{ textAlign: 'center', marginLeft: '60px' }} type="text" />
+                </div>
+                <br />
+                <div className='rowC'>
+                    <h2 className='rowC-elementA'>Quantity</h2><br />
+                    <input id='quantity' style={{ textAlign: 'center', marginLeft: '32px' }} type="text" />
                 </div>
                 <br />
                 <br />
