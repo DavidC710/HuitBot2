@@ -31,10 +31,10 @@ export class NavMenu extends Component {
                         <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
                             <ul className="navbar-nav flex-grow">
                                 <NavItem>
-                                    <NavLink tag={Link} className="text-light" to="/home">Home</NavLink>
+                                    <NavLink tag={Link} className="text-light" to="/home">ETH</NavLink>
                                 </NavItem>
                                 <NavItem>
-                                    <NavLink tag={Link} className="text-light" to="/counter">Counter</NavLink>
+                                    <NavLink tag={Link} className="text-light" to="/counter">BTC</NavLink>
                                 </NavItem>
                                 <NavItem>
                                     <NavLink tag={Link} className="text-light" to="/">Coins' Arbitrage</NavLink>

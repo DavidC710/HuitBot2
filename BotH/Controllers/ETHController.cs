@@ -6,12 +6,12 @@ namespace BotH.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class LoopController : ControllerBase
+    public class ETHController : ControllerBase
     {
         public Root configuration;
         public DateTime now;
 
-        public LoopController()
+        public ETHController()
         {
             string path = @"D:\Documents\Repos\BotH\BotH\Configuration\coinsData.json";
             this.configuration = JsonConvert.DeserializeObject<Root>(System.IO.File.ReadAllText(path))!;
@@ -20,7 +20,7 @@ namespace BotH.Controllers
 
 
         [HttpPost]
-        public async Task<ResponseMessage> Loop(LoopInput order)
+        public async Task<ResponseMessage> ETH(LoopInput order)
         {
             try
             {
@@ -36,13 +36,13 @@ namespace BotH.Controllers
                 bool firstOrderSent = false;
 
                 ResponseMessage response = new ResponseMessage();
-                DateTime date = new DateTime(now.Year, now.Month, now.Day, Convert.ToInt16(configuration.BTCLoopStart_Hour), Convert.ToInt16(configuration.BTCLoopStart_Minute), 0);
-                DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.BTCLoop_Duration));
+                DateTime date = new DateTime(now.Year, now.Month, now.Day, Convert.ToInt16(configuration.ETHLoopStart_Hour), Convert.ToInt16(configuration.ETHLoopStart_Minute), 0);
+                DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.ETHLoop_Duration));
                 var activeLoop = (DateTime.Now >= date && DateTime.Now <= refDate);
 
                 if (!activeLoop)
                 {
-                    response.Message = "Outside BTC - Loop Time Range.";
+                    response.Message = "Outside ETH-Loop Time Range.";
                     return response;
                 }
 
@@ -51,13 +51,13 @@ namespace BotH.Controllers
                     case "BUY":
                         firstOrder = new NewOrder(OrderSide.Buy)
                         {
-                            symbol = "BTC/USDT",
+                            symbol = "ETH/USDT",
                             quantity = order.quantity,
                             price = order.floor,
                         };
                         secondOrder = new NewOrder(OrderSide.Sell)
                         {
-                            symbol = "BTC/USDT",
+                            symbol = "ETH/USDT",
                             quantity = order.quantity,
                             price = order.top,
                         };
@@ -65,13 +65,13 @@ namespace BotH.Controllers
                     case "SELL":
                         firstOrder = new NewOrder(OrderSide.Sell)
                         {
-                            symbol = "BTC/USDT",
+                            symbol = "ETH/USDT",
                             quantity = order.quantity,
                             price = order.top,
                         };
                         secondOrder = new NewOrder(OrderSide.Buy)
                         {
-                            symbol = "BTC/USDT",
+                            symbol = "ETH/USDT",
                             quantity = order.quantity,
                             price = order.floor,
                         };

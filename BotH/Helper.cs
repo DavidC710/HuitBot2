@@ -38,9 +38,13 @@
         public string StartProcess_Minute { get; set; }
         public decimal DefaultQuantity { get; set; }
         public decimal ArbitragePercentageValue { get; set; }
-        public int Loop_Duration { get; set; }
-        public string LoopStart_Hour { get; set; }
-        public string LoopStart_Minute { get; set; }
+        public int BTCLoop_Duration { get; set; }
+        public string BTCLoopStart_Hour { get; set; }
+        public string BTCLoopStart_Minute { get; set; }
+        public int ETHLoop_Duration { get; set; }
+        public string ETHLoopStart_Hour { get; set; }
+        public string ETHLoopStart_Minute { get; set; }
+
     }
 
     public class Sufixes
