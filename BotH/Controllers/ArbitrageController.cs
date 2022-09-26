@@ -33,7 +33,7 @@ namespace BotH.Controllers
                 {
                     symbol = order.buyer,
                     quantity = quantity,
-                    price = order.price.
+                    price = order.price,
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Sell)
