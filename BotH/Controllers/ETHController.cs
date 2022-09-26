@@ -101,10 +101,11 @@ namespace BotH.Controllers
                         firstOrderSent = true;
                     }
                     else {
+                        var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("ETH/USDT");
                         var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                         var firstOrderData = firstOrderInfo.Data;
 
-                        if (firstOrderData.Status == CommonOrderStatus.Filled)
+                        if (firstOrderData.Status == CommonOrderStatus.Filled && !ordersUSDTInfo.Data.Any())
                         {
                             var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                             secondOrder.symbol,
@@ -130,6 +131,33 @@ namespace BotH.Controllers
                                 }
                             }
                         }
+
+                        //if (firstOrderData.Status == CommonOrderStatus.Filled)
+                        //{
+                        //    var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                        //    secondOrder.symbol,
+                        //    (CommonOrderSide)secondOrder.orderSide,
+                        //    (CommonOrderType)secondOrder.spotOrderType,
+                        //    secondOrder.quantity,
+                        //    (decimal)secondOrder.price);
+
+                        //    if (!secondOrderResponse.Success)
+                        //    {
+                        //        response.Message += secondOrderResponse.Error!.ToString() + ". ";
+                        //        return response;
+                        //    }
+                        //    secondOrderId = secondOrderResponse.Data.Id;
+
+                        //    while (firstOrderSent)
+                        //    {
+                        //        var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
+                        //        var secondOrderData = secondOrderInfo.Data;
+                        //        if (secondOrderData.Status == CommonOrderStatus.Filled)
+                        //        {
+                        //            firstOrderSent = false;
+                        //        }
+                        //    }
+                        //}
                     }
 
                     activeLoop = (DateTime.Now >= date && DateTime.Now <= refDate);

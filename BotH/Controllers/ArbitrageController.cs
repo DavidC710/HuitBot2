@@ -33,14 +33,14 @@ namespace BotH.Controllers
                 {
                     symbol = order.buyer,
                     quantity = quantity,
-                    price = order.price,
+                    spotOrderType = SpotOrderType.Market
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
                     quantity = quantity,
-                    price = order.ask,
+                    price = order.ask                    
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Buy)

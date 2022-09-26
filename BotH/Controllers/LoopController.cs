@@ -101,10 +101,11 @@ namespace BotH.Controllers
                         firstOrderSent = true;
                     }
                     else {
+                        var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("BTC/USDT");
                         var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                         var firstOrderData = firstOrderInfo.Data;
 
-                        if (firstOrderData.Status == CommonOrderStatus.Filled)
+                        if (firstOrderData.Status == CommonOrderStatus.Filled && !ordersUSDTInfo.Data.Any())
                         {
                             var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                             secondOrder.symbol,
