@@ -1,7 +1,4 @@
 ﻿
-using CryptoExchange.Net.Objects;
-using FTX.Net.Objects;
-
 namespace BotH.Controllers
 {
     [ApiController]
@@ -101,11 +98,12 @@ namespace BotH.Controllers
                         firstOrderSent = true;
                     }
                     else {
+                        var firstOrderOpenInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("ETH/USDT");
                         var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("ETH/USDT");
                         var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                         var firstOrderData = firstOrderInfo.Data;
 
-                        if (firstOrderData.Status == CommonOrderStatus.Filled && !ordersUSDTInfo.Data.Any())
+                        if (!firstOrderOpenInfo.Data.Any())
                         {
                             var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                             secondOrder.symbol,
@@ -123,41 +121,15 @@ namespace BotH.Controllers
 
                             while (firstOrderSent)
                             {
+                                var secondOrderOpenInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("ETH/USDT");
                                 var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                                 var secondOrderData = secondOrderInfo.Data;
-                                if (secondOrderData.Status == CommonOrderStatus.Filled)
+                                if (!secondOrderOpenInfo.Data.Any())
                                 {
                                     firstOrderSent = false;
                                 }
                             }
                         }
-
-                        //if (firstOrderData.Status == CommonOrderStatus.Filled)
-                        //{
-                        //    var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                        //    secondOrder.symbol,
-                        //    (CommonOrderSide)secondOrder.orderSide,
-                        //    (CommonOrderType)secondOrder.spotOrderType,
-                        //    secondOrder.quantity,
-                        //    (decimal)secondOrder.price);
-
-                        //    if (!secondOrderResponse.Success)
-                        //    {
-                        //        response.Message += secondOrderResponse.Error!.ToString() + ". ";
-                        //        return response;
-                        //    }
-                        //    secondOrderId = secondOrderResponse.Data.Id;
-
-                        //    while (firstOrderSent)
-                        //    {
-                        //        var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
-                        //        var secondOrderData = secondOrderInfo.Data;
-                        //        if (secondOrderData.Status == CommonOrderStatus.Filled)
-                        //        {
-                        //            firstOrderSent = false;
-                        //        }
-                        //    }
-                        //}
                     }
 
                     activeLoop = (DateTime.Now >= date && DateTime.Now <= refDate);

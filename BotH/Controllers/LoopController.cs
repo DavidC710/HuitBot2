@@ -1,7 +1,4 @@
 ﻿
-using CryptoExchange.Net.Objects;
-using FTX.Net.Objects;
-
 namespace BotH.Controllers
 {
     [ApiController]
@@ -18,18 +15,48 @@ namespace BotH.Controllers
             now = DateTime.Today;
         }
 
+        public async Task<ResponseMessage> Loop1(LoopInput order)
+        {
+            ResponseMessage response = new ResponseMessage();
+
+            var ftxClient = new FTXClient(new FTXClientOptions()
+            {
+                ApiCredentials = new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKeySub!, configuration.Exchange_ApiData.FirstOrDefault()!.SecretSub!),
+                LogLevel = LogLevel.Trace,
+                SubaccountName = "BTC"
+            });
+
+            var historicPrices = await ftxClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
+                FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+
+            var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
+            var mm8Records = mm20Records.Take(8);
+
+            var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
+            var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
+
+            var diff = Math.Abs(mm20 - mm8);
+
+            return response;
+
+        }
 
         [HttpPost]
         public async Task<ResponseMessage> Loop(LoopInput order)
         {
             try
             {
+                //var ttt = 1;
+
+                //if (ttt == 1) return await Loop1(order);
+
                 var ftxClient = new FTXClient(new FTXClientOptions()
                 {
                     ApiCredentials = new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKeySub!, configuration.Exchange_ApiData.FirstOrDefault()!.SecretSub!),
                     LogLevel = LogLevel.Trace,
                     SubaccountName = "BTC"
                 });
+                await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("BTC/USDT");
 
                 NewOrder firstOrder = new NewOrder();
                 NewOrder secondOrder = new NewOrder();
@@ -40,9 +67,20 @@ namespace BotH.Controllers
                 DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.BTCLoop_Duration));
                 var activeLoop = (DateTime.Now >= date && DateTime.Now <= refDate);
 
-                if (!activeLoop)
+                var historicPrices = await ftxClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
+                FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+
+                var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
+                var mm8Records = mm20Records.Take(8);
+
+                var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
+                var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
+
+                var diff = Math.Abs(mm20 - mm8);
+
+                if (!activeLoop || diff > 53)
                 {
-                    response.Message = "Outside BTC - Loop Time Range.";
+                    response.Message = "Can't run this process right now. Outside range: " + (!activeLoop ? "YES. " : "NO. ") + "Difference: " + diff.ToString();
                     return response;
                 }
 
@@ -100,12 +138,13 @@ namespace BotH.Controllers
                         firstOrderId = firstOrderResponse.Data.Id;
                         firstOrderSent = true;
                     }
-                    else {
-                        var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("BTC/USDT");
+                    else
+                    {
+                        var firstOrderOpenInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("BTC/USDT");
                         var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                         var firstOrderData = firstOrderInfo.Data;
 
-                        if (firstOrderData.Status == CommonOrderStatus.Filled && !ordersUSDTInfo.Data.Any())
+                        if (!firstOrderOpenInfo.Data.Any())
                         {
                             var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                             secondOrder.symbol,
@@ -123,9 +162,10 @@ namespace BotH.Controllers
 
                             while (firstOrderSent)
                             {
+                                var secondOrderOpenInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync("BTC/USDT");
                                 var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                                 var secondOrderData = secondOrderInfo.Data;
-                                if (secondOrderData.Status == CommonOrderStatus.Filled)
+                                if (!secondOrderOpenInfo.Data.Any())
                                 {
                                     firstOrderSent = false;
                                 }
