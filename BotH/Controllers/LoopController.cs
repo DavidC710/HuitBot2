@@ -70,17 +70,20 @@ namespace BotH.Controllers
                 var historicPrices = await ftxClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
                 FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
 
+                var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
                 var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
                 var mm8Records = mm20Records.Take(8);
 
                 var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
                 var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
 
+                var diffLastPrice = Math.Abs(lastPrice.ClosePrice - mm8);
                 var diff = Math.Abs(mm20 - mm8);
 
-                if (!activeLoop || diff > 53)
+                if (!activeLoop || diff > 53 || diffLastPrice > 53)
                 {
-                    response.Message = "Can't run this process right now. Outside range: " + (!activeLoop ? "YES. " : "NO. ") + "Difference: " + diff.ToString();
+                    response.Message = "Can't run this process right now. Outside range: " + (!activeLoop ? "YES. " : "NO. ") + "Difference: " + diff.ToString()
+                        + ". LastPriceDifference: " + diffLastPrice.ToString();
                     return response;
                 }
 
