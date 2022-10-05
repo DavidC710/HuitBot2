@@ -29,6 +29,27 @@ namespace BotH.Controllers
                 var ftxClient = new FTXClient();
                 ftxClient.SetApiCredentials(new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey!, configuration.Exchange_ApiData.FirstOrDefault()!.Secret!));
 
+                var firstOrder = new NewOrder(OrderSide.Buy)
+                {
+                    symbol = order.buyer,
+                    quantity = quantity,
+                    price = order.price,
+                };
+
+                var secondOrder = new NewOrder(OrderSide.Sell)
+                {
+                    symbol = order.seller,
+                    quantity = quantity,
+                    price = order.ask
+                };
+
+                var thirdOrder = new NewOrder(OrderSide.Buy)
+                {
+                    symbol = mainBaseFTXCoin,
+                    quantity = order.quantity,
+                    price = order.lastPrice,
+                };
+
                 ordersList.Add(new NewOrder(OrderSide.Buy)
                 {
                     symbol = order.buyer,
@@ -50,16 +71,83 @@ namespace BotH.Controllers
                     price = order.lastPrice,
                 });
 
-                foreach (var ord in ordersList)
-                {
-                    var orderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                        ord.symbol,
-                        (CommonOrderSide)ord.orderSide,
-                        (CommonOrderType)ord.spotOrderType,
-                        ord.quantity,
-                        (decimal)ord.price);
+                //foreach (var ord in ordersList)
+                //{
+                //    var orderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                //        ord.symbol,
+                //        (CommonOrderSide)ord.orderSide,
+                //        (CommonOrderType)ord.spotOrderType,
+                //        ord.quantity,
+                //        (decimal)ord.price);
 
-                    if (!orderResponse.Success) response.Message += orderResponse.Error!.ToString() + ". ";
+                //    if (!orderResponse.Success) response.Message += orderResponse.Error!.ToString() + ". ";
+                //}
+
+                var firstOrderId = string.Empty;
+                var secondOrderId = string.Empty;
+                var firstOrderSent = false;
+                var secondOrderSent = false;
+
+
+                var firstOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                        firstOrder.symbol,
+                        (CommonOrderSide)firstOrder.orderSide,
+                        (CommonOrderType)firstOrder.spotOrderType,
+                        firstOrder.quantity,
+                        (decimal)firstOrder.price);
+
+                if (!firstOrderResponse.Success)
+                {
+                    response.Message += firstOrderResponse.Error!.ToString() + ". ";
+                    return response;
+                }
+                firstOrderId = firstOrderResponse.Data.Id;
+                firstOrderSent = true;
+
+                while (firstOrderSent) {
+                    var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
+                    var firstOrderData = firstOrderInfo.Data;
+
+                    if (firstOrderData.Status == CommonOrderStatus.Filled) {
+                        firstOrderSent = false;
+
+                       var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                       secondOrder.symbol,
+                       (CommonOrderSide)secondOrder.orderSide,
+                       (CommonOrderType)secondOrder.spotOrderType,
+                       secondOrder.quantity,
+                       (decimal)secondOrder.price);
+
+                        if (!secondOrderResponse.Success)
+                        {
+                            response.Message += secondOrderResponse.Error!.ToString() + ". ";
+                            return response;
+                        }
+                        secondOrderId = firstOrderResponse.Data.Id;
+                        secondOrderSent = true;
+                    }
+                }
+
+                while (secondOrderSent) {
+                    var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
+                    var secondOrderData = secondOrderInfo.Data;
+
+                    if (secondOrderData.Status == CommonOrderStatus.Filled) {
+                        secondOrderSent = false;
+                        var thirdOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                      thirdOrder.symbol,
+                      (CommonOrderSide)thirdOrder.orderSide,
+                      (CommonOrderType)thirdOrder.spotOrderType,
+                      thirdOrder.quantity,
+                      (decimal)thirdOrder.price);
+
+                        if (!thirdOrderResponse.Success)
+                        {
+                            response.Message += thirdOrderResponse.Error!.ToString() + ". ";
+                            return response;
+                        }
+
+                    }
                 }
 
                 response.Message += "All orders placed succesfully.";
@@ -230,12 +318,9 @@ namespace BotH.Controllers
                                             ? true : false;
                         decimal perc = Math.Round(((valFTX / 1) * 100), 5);
                         DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
-                        //bool haveToWait = (DateTime.Now.Minute == date.Minute) && (DateTime.Now.Hour == date.Hour);
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= refDate)
                         {
-                            //if(haveToWait) Thread.Sleep(60000);
-
                             await CreateOrder(new OrdersInput()
                             {
                                 seller = coin.USDTFTX,
@@ -282,20 +367,6 @@ namespace BotH.Controllers
                         HasOpendOrders = (myOrders.Where(t => t.Symbol == coin.BTCFTX).Any() || myOrders.Where(t => t.Symbol == coin.USDTFTX).Any()) ? true : false,
                     });
                 }
-
-                //var fullPath = @"C:\Users\ThermalTake\Documents\Bot\FTX Coins\data.csv";
-
-                //if (!System.IO.File.Exists(fullPath))
-                //{
-                //    using (StreamWriter sw = System.IO.File.CreateText(fullPath))
-                //    {
-                //        sw.WriteLine("Symbol;Ask;Bid");
-                //        foreach (var c in coinsDataFTX.Data)
-                //        {
-                //            sw.WriteLine(c.Name + ";" + c.BestAskPrice + ";" + c.BestBidPrice);
-                //        }
-                //    }
-                //}
 
                 result.Add(ftxResult);
 
