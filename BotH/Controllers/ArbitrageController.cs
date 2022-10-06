@@ -361,7 +361,7 @@ namespace BotH.Controllers
                         BTC = coin.BTCFTX,
                         USDT = coin.USDTFTX,
                         Price = ftxCoinBid,
-                        Quantity = 0.0005,
+                        Quantity = Convert.ToDouble(configuration.DefaultQuantity),
                         FirstQuantity = Math.Round(ftxCoinAsk, 3),
                         LastPrice = Math.Round(bid_BTDUSDT_FTX, 3),
                         HasOpendOrders = (myOrders.Where(t => t.Symbol == coin.BTCFTX).Any() || myOrders.Where(t => t.Symbol == coin.USDTFTX).Any()) ? true : false,
