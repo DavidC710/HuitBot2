@@ -46,10 +46,6 @@ namespace BotH.Controllers
         {
             try
             {
-                //var ttt = 1;
-
-                //if (ttt == 1) return await Loop1(order);
-
                 var ftxClient = new FTXClient(new FTXClientOptions()
                 {
                     ApiCredentials = new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKeySub!, configuration.Exchange_ApiData.FirstOrDefault()!.SecretSub!),
@@ -73,17 +69,35 @@ namespace BotH.Controllers
                 var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
                 var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
                 var mm8Records = mm20Records.Take(8);
+                var standarDeviationRecords = mm20Records.Take(9);
+                var priceChangeData = mm20Records.Take(2);
+
+                var priceChangeDiff = Math.Abs(priceChangeData.FirstOrDefault()!.ClosePrice - priceChangeData.LastOrDefault()!.ClosePrice);
+                var movementSpeed = Convert.ToDouble(Math.Abs((lastPrice!.ClosePrice - mm8Records.LastOrDefault()!.ClosePrice)/ mm8Records.Count()));
+
+                var deviationList = standarDeviationRecords.Select(t => Convert.ToDouble(t.ClosePrice)).ToList();
+                var appliedDiffList = new List<double>();
+
+                for (int i = 0; i < deviationList.Count() - 1  ; i++) {
+                    appliedDiffList.Add(deviationList[i + 1] - deviationList[i]);
+                }
+
+                var organizedList = appliedDiffList.AsEnumerable<double>();
+
+                var volatility = CalculateStandardDeviation(organizedList);
+
+                var directionalRatio = movementSpeed / volatility;
 
                 var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
                 var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
 
-                var diffLastPrice = Math.Abs(lastPrice.ClosePrice - mm8);
+                var diffLastPrice = Math.Abs(lastPrice!.ClosePrice - mm8);
                 var diff = Math.Abs(mm20 - mm8);
 
-                if (!activeLoop || diff > 53 || diffLastPrice > 53)
+                if (!activeLoop || diff > 53 || diffLastPrice > 53 || directionalRatio > 0.4)
                 {
                     response.Message = "Can't run this process right now. Outside range: " + (!activeLoop ? "YES. " : "NO. ") + "Difference: " + diff.ToString()
-                        + ". LastPriceDifference: " + diffLastPrice.ToString();
+                        + ". LastPriceDifference: " + diffLastPrice.ToString() + ". DirectionalRatio: " + directionalRatio.ToString();
                     return response;
                 }
 
@@ -186,6 +200,25 @@ namespace BotH.Controllers
             {
                 throw new Exception(ex.Message + ". " + ex.StackTrace);
             }
+        }
+
+        private double CalculateStandardDeviation(IEnumerable<double> values)
+        {
+            double standardDeviation = 0;
+
+            if (values.Any())
+            {
+                // Compute the average.     
+                double avg = values.Average();
+
+                // Perform the Sum of (value-avg)_2_2.      
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+
+                // Put it all together.      
+                standardDeviation = Math.Sqrt((sum) / (values.Count() - 1));
+            }
+
+            return standardDeviation;
         }
     }
 }

@@ -57,7 +57,7 @@
 	"DefaultQuantity": 0.0005,
 	"ArbitragePercentageValue": 0.10,
 	"BTCLoop_Duration": 5,
-	"BTCLoopStart_Hour": "16",
+	"BTCLoopStart_Hour": "08",
 	"BTCLoopStart_Minute": "16",
 	"ETHLoop_Duration": 5,
 	"ETHLoopStart_Hour": "16",
