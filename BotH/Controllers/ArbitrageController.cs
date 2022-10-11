@@ -123,7 +123,7 @@ namespace BotH.Controllers
                             response.Message += secondOrderResponse.Error!.ToString() + ". ";
                             return response;
                         }
-                        secondOrderId = firstOrderResponse.Data.Id;
+                        secondOrderId = secondOrderResponse.Data.Id;
                         secondOrderSent = true;
                     }
                 }
@@ -319,7 +319,36 @@ namespace BotH.Controllers
                         decimal perc = Math.Round(((valFTX / 1) * 100), 5);
                         DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
 
-                        if (perc > (decimal)configuration.ArbitragePercentageValue && !openedOrders && DateTime.Now >= date && DateTime.Now <= refDate)
+                        var historicPrices = await ftxClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
+                                FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+
+                        var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
+                        var mm8Records = mm20Records.Take(8);
+                        var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
+                        var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
+                        var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
+                        var movementSpeed = Convert.ToDouble(Math.Abs((lastPrice!.ClosePrice - mm8Records.LastOrDefault()!.ClosePrice) / mm8Records.Count()));
+                        var standarDeviationRecords = mm20Records.Take(9);
+
+                        var appliedDiffList = new List<double>();
+
+                        var deviationList = standarDeviationRecords.Select(t => Convert.ToDouble(t.ClosePrice)).ToList();
+                        for (int i = 0; i < deviationList.Count() - 1; i++)
+                        {
+                            appliedDiffList.Add(deviationList[i + 1] - deviationList[i]);
+                        }
+
+                        var organizedList = appliedDiffList.AsEnumerable<double>();
+                        var volatility = CalculateStandardDeviation(organizedList);
+
+                        var diffLastPrice = Math.Abs(lastPrice!.ClosePrice - mm8);
+                        var diff = Math.Abs(mm20 - mm8);
+                        var directionalRatio = movementSpeed / volatility;
+
+                        if (perc > (decimal)configuration.ArbitragePercentageValue 
+                            && !openedOrders && DateTime.Now >= date 
+                            && DateTime.Now <= refDate && diff > 53 
+                            && diffLastPrice > 53 && directionalRatio > 0.4)
                         {
                             await CreateOrder(new OrdersInput()
                             {
@@ -377,6 +406,25 @@ namespace BotH.Controllers
             {
                 throw new Exception(ex.Message + ". " + ex.StackTrace);
             }
+        }
+
+        private double CalculateStandardDeviation(IEnumerable<double> values)
+        {
+            double standardDeviation = 0;
+
+            if (values.Any())
+            {
+                // Compute the average.     
+                double avg = values.Average();
+
+                // Perform the Sum of (value-avg)_2_2.      
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+
+                // Put it all together.      
+                standardDeviation = Math.Sqrt((sum) / (values.Count() - 1));
+            }
+
+            return standardDeviation;
         }
     }
 }
