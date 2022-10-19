@@ -88,6 +88,7 @@ namespace BotH.Controllers
                 var firstOrderSent = false;
                 var secondOrderSent = false;
 
+                var message = "";
 
                 var firstOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                         firstOrder.symbol,
@@ -101,12 +102,25 @@ namespace BotH.Controllers
                     response.Message += firstOrderResponse.Error!.ToString() + ". ";
                     return response;
                 }
+                var firstOrderTime = DateTime.Now;
                 firstOrderId = firstOrderResponse.Data.Id;
                 firstOrderSent = true;
 
                 while (firstOrderSent) {
                     var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                     var firstOrderData = firstOrderInfo.Data;
+
+                    var refDate = DateTime.Now;
+                    TimeSpan ts = refDate - firstOrderTime;
+
+                    if (ts.Minutes >= 15)
+                    {
+                        firstOrderSent = false;
+                        secondOrderSent = false;
+
+                        await ftxClient.TradeApi.CommonSpotClient.CancelOrderAsync(firstOrderId);
+                        message = "First order was cancelled. Reached time limit.";
+                    }
 
                     if (firstOrderData.Status == CommonOrderStatus.Filled) {
                         firstOrderSent = false;
@@ -147,10 +161,11 @@ namespace BotH.Controllers
                             return response;
                         }
 
+                        message = "All orders placed succesfully.";
                     }
                 }
 
-                response.Message += "All orders placed succesfully.";
+                response.Message += message;
 
                 return response;
 
@@ -329,6 +344,7 @@ namespace BotH.Controllers
                         var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
                         var movementSpeed = Convert.ToDouble(Math.Abs((lastPrice!.ClosePrice - mm8Records.LastOrDefault()!.ClosePrice) / mm8Records.Count()));
                         var standarDeviationRecords = mm20Records.Take(9);
+                        var mm3Records = mm20Records.Take(3);
 
                         var appliedDiffList = new List<double>();
 
@@ -341,14 +357,43 @@ namespace BotH.Controllers
                         var organizedList = appliedDiffList.AsEnumerable<double>();
                         var volatility = CalculateStandardDeviation(organizedList);
 
-                        var diffLastPrice = Math.Abs(lastPrice!.ClosePrice - mm8);
                         var diff = Math.Abs(mm20 - mm8);
+                        var diffVal = mm8 < mm20 ? mm8 : mm20;
+                        var val = (diff / 2) + diffVal;
+                        var diffLastPrice = Math.Abs(lastPrice!.ClosePrice - val);
                         var directionalRatio = movementSpeed / volatility;
+                        var coinsState = new List<Candle>();
+                        int counter = 0;
+
+                        foreach (var c in mm3Records) {
+                            counter += 1;
+                            switch (counter) { 
+                                case 1:
+                                    coinsState.Add(new Candle() { Order = "Third", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice});
+                                    break;
+                                case 2:
+                                    coinsState.Add(new Candle() { Order = "Second", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice });
+                                    break;
+                                case 3:
+                                    coinsState.Add(new Candle() { Order = "First", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice });
+                                    break;
+                            }
+                        }
+
+                        counter = 0;
+
+                        foreach (var it in coinsState) {
+                            it.Type = it.OpenPrice > it.ClosePrice ? "Red" : it.OpenPrice < it.ClosePrice ? "Green" : "N/A";
+                        }
+
+                        var canOperateCandle = (coinsState.Where(t => t.Type == "Red").Count() < 3 
+                            || coinsState.Where(t => t.Type == "Green").Count() < 3);
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue 
                             && !openedOrders && DateTime.Now >= date 
                             && DateTime.Now <= refDate && diff > 53 
-                            && diffLastPrice > 53 && directionalRatio > 0.4)
+                            && diffLastPrice > 53 && directionalRatio > 0.4
+                            && canOperateCandle)
                         {
                             await CreateOrder(new OrdersInput()
                             {

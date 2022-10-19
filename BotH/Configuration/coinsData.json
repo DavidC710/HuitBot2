@@ -52,7 +52,7 @@
 		}
 	],
 	"AutomaticProcess_Duration": 5,
-	"StartProcess_Hour": "10",
+	"StartProcess_Hour": "08",
 	"StartProcess_Minute": "26",
 	"DefaultQuantity": 0.0005,
 	"ArbitragePercentageValue": 0.10,
@@ -60,6 +60,6 @@
 	"BTCLoopStart_Hour": "08",
 	"BTCLoopStart_Minute": "16",
 	"ETHLoop_Duration": 5,
-	"ETHLoopStart_Hour": "16",
+	"ETHLoopStart_Hour": "08",
 	"ETHLoopStart_Minute": "16"
 }
