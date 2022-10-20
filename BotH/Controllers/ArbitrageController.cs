@@ -313,6 +313,11 @@ namespace BotH.Controllers
                     });
                 }
 
+                decimal diff = 0;
+                decimal diffLastPrice = 0;
+                double directionalRatio = 0;
+                bool canOperateCandle = false;
+
                 foreach (var coin in coins)
                 {
                     var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
@@ -357,11 +362,11 @@ namespace BotH.Controllers
                         var organizedList = appliedDiffList.AsEnumerable<double>();
                         var volatility = CalculateStandardDeviation(organizedList);
 
-                        var diff = Math.Abs(mm20 - mm8);
+                        diff = Math.Abs(mm20 - mm8);
                         var diffVal = mm8 < mm20 ? mm8 : mm20;
                         var val = (diff / 2) + diffVal;
-                        var diffLastPrice = Math.Abs(lastPrice!.ClosePrice - val);
-                        var directionalRatio = movementSpeed / volatility;
+                        diffLastPrice = Math.Abs(lastPrice!.ClosePrice - val);
+                        directionalRatio = movementSpeed / volatility;
                         var coinsState = new List<Candle>();
                         int counter = 0;
 
@@ -386,13 +391,13 @@ namespace BotH.Controllers
                             it.Type = it.OpenPrice > it.ClosePrice ? "Red" : it.OpenPrice < it.ClosePrice ? "Green" : "N/A";
                         }
 
-                        var canOperateCandle = (coinsState.Where(t => t.Type == "Red").Count() < 3 
+                        canOperateCandle = (coinsState.Where(t => t.Type == "Red").Count() < 3 
                             || coinsState.Where(t => t.Type == "Green").Count() < 3);
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue 
                             && !openedOrders && DateTime.Now >= date 
-                            && DateTime.Now <= refDate && diff < 53 
-                            && diffLastPrice < 53 && directionalRatio < 0.4
+                            && DateTime.Now <= refDate && diff > 53 
+                            && diffLastPrice > 53 && directionalRatio > 0.4
                             && canOperateCandle)
                         {
                             await CreateOrder(new OrdersInput()
@@ -427,6 +432,10 @@ namespace BotH.Controllers
                     }
 
                     ftxResult.TimeToFinish = timeToFinish;
+                    ftxResult.Difference = diff;
+                    ftxResult.LastPriceDifference = diffLastPrice;
+                    ftxResult.DirectionalRatio = directionalRatio;
+                    ftxResult.CandleCanOperate = canOperateCandle;
 
                     ftxResult.Coins.Add(new CoinsList()
                     {

@@ -56,6 +56,12 @@ export class FetchData extends Component {
                     <h4 className='rowC-elementA'>ETH/USDT: <br /> ${coinsRender.eth}</h4>
                     <h4 className='rowC-elementA'>Time: <br />{coinsRender.timeToFinish}</h4><br />
                 </div>
+                <div className='rowC'>
+                    <h4 className='rowC-elementA'>Difference: <br /> {coinsRender.difference}</h4>
+                    <h4 className='rowC-elementA'>Last price Difference: <br /> {coinsRender.lastPriceDifference}</h4>
+                    <h4 className='rowC-elementA'>Directional Ratio: <br />{coinsRender.directionalRatio}</h4><br />
+                    <h4 className='rowC-elementA'>Can Operate: <br /> <div className="dot" style={{ backgroundColor: coinsRender.candleCanOperate == true ? '#D72C3A' : '#00740B' }}></div></h4><br />
+                </div>
                 {/*<div className="radio">*/}
                 {/*    <label>*/}
                 {/*        <input*/}
