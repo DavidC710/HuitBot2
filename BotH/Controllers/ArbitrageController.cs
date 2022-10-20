@@ -391,8 +391,8 @@ namespace BotH.Controllers
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue 
                             && !openedOrders && DateTime.Now >= date 
-                            && DateTime.Now <= refDate && diff > 53 
-                            && diffLastPrice > 53 && directionalRatio > 0.4
+                            && DateTime.Now <= refDate && diff < 53 
+                            && diffLastPrice < 53 && directionalRatio < 0.4
                             && canOperateCandle)
                         {
                             await CreateOrder(new OrdersInput()
