@@ -279,7 +279,7 @@ namespace BotH.Controllers
         {
             try
             {
-                await GetDailyReport();
+                //await GetDailyReport();
                 List<ArbitrageResult> result = new List<ArbitrageResult>();
                 DateTime date = new DateTime(now.Year, now.Month, now.Day, Convert.ToInt16(configuration.StartProcess_Hour), Convert.ToInt16(configuration.StartProcess_Minute), 0);
                 string mainBaseCoinFTX = configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name!;
@@ -320,6 +320,11 @@ namespace BotH.Controllers
 
                 foreach (var coin in coins)
                 {
+                    diff = 0;
+                    diffLastPrice = 0;
+                    directionalRatio = 0;
+                    canOperateCandle = false;
+
                     var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
                     var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
                     var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
@@ -349,7 +354,7 @@ namespace BotH.Controllers
                         var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
                         var movementSpeed = Convert.ToDouble(Math.Abs((lastPrice!.ClosePrice - mm8Records.LastOrDefault()!.ClosePrice) / mm8Records.Count()));
                         var standarDeviationRecords = mm20Records.Take(9);
-                        var mm3Records = mm20Records.Take(3);
+                        var mm3Records = mm20Records.Take(4);
 
                         var appliedDiffList = new List<double>();
 
@@ -371,8 +376,10 @@ namespace BotH.Controllers
                         int counter = 0;
 
                         foreach (var c in mm3Records) {
-                            counter += 1;
-                            switch (counter) { 
+                            switch (counter) {
+                                case 0:
+
+                                    break;
                                 case 1:
                                     coinsState.Add(new Candle() { Order = "Third", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice});
                                     break;
@@ -383,6 +390,7 @@ namespace BotH.Controllers
                                     coinsState.Add(new Candle() { Order = "First", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice });
                                     break;
                             }
+                            counter += 1;
                         }
 
                         counter = 0;
@@ -396,8 +404,8 @@ namespace BotH.Controllers
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue 
                             && !openedOrders && DateTime.Now >= date 
-                            && DateTime.Now <= refDate && diff > 53 
-                            && diffLastPrice > 53 && directionalRatio > 0.4
+                            && DateTime.Now <= refDate && diff < 53 
+                            && diffLastPrice < 53 && directionalRatio < 0.4
                             && canOperateCandle)
                         {
                             await CreateOrder(new OrdersInput()
