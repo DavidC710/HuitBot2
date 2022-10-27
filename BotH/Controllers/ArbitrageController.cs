@@ -319,18 +319,18 @@ namespace BotH.Controllers
                 bool canOperateCandle = false;
 
                 foreach (var coin in coins)
-                {
-                    diff = 0;
-                    diffLastPrice = 0;
-                    directionalRatio = 0;
-                    canOperateCandle = false;
-
+                {                 
                     var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
                     var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
                     var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
 
                     if (coin.IsAutomatic)
                     {
+                        diff = 0;
+                        diffLastPrice = 0;
+                        directionalRatio = 0;
+                        canOperateCandle = false;
+
                         var opnOrders = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
                         var ordersBTCInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.BTCFTX);
                         var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.USDTFTX);
@@ -399,8 +399,8 @@ namespace BotH.Controllers
                             it.Type = it.OpenPrice > it.ClosePrice ? "Red" : it.OpenPrice < it.ClosePrice ? "Green" : "N/A";
                         }
 
-                        canOperateCandle = (coinsState.Where(t => t.Type == "Red").Count() < 3 
-                            || coinsState.Where(t => t.Type == "Green").Count() < 3);
+                        canOperateCandle = !(coinsState.Where(t => t.Type == "Red").Count() == 3 
+                            || coinsState.Where(t => t.Type == "Green").Count() == 3);
 
                         if (perc > (decimal)configuration.ArbitragePercentageValue 
                             && !openedOrders && DateTime.Now >= date 
