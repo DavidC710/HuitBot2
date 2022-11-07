@@ -51,9 +51,9 @@
 			]
 		}
 	],
-	"AutomaticProcess_Duration": 5,
-	"StartProcess_Hour": "08",
-	"StartProcess_Minute": "26",
+	"AutomaticProcess_Duration": 210,
+	"StartProcess_Hour": "01",
+	"StartProcess_Minute": "30",
 	"DefaultQuantity": 0.0005,
 	"ArbitragePercentageValue": 0.10,
 	"BTCLoop_Duration": 5,

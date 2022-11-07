@@ -61,7 +61,7 @@ namespace BotH.Controllers
                 {
                     symbol = order.seller,
                     quantity = quantity,
-                    price = order.ask                    
+                    price = order.ask
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Buy)
@@ -106,7 +106,8 @@ namespace BotH.Controllers
                 firstOrderId = firstOrderResponse.Data.Id;
                 firstOrderSent = true;
 
-                while (firstOrderSent) {
+                while (firstOrderSent)
+                {
                     var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                     var firstOrderData = firstOrderInfo.Data;
 
@@ -122,15 +123,16 @@ namespace BotH.Controllers
                         message = "First order was cancelled. Reached time limit.";
                     }
 
-                    if (firstOrderData.Status == CommonOrderStatus.Filled) {
+                    if (firstOrderData.Status == CommonOrderStatus.Filled)
+                    {
                         firstOrderSent = false;
 
-                       var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                       secondOrder.symbol,
-                       (CommonOrderSide)secondOrder.orderSide,
-                       (CommonOrderType)secondOrder.spotOrderType,
-                       secondOrder.quantity,
-                       (decimal)secondOrder.price);
+                        var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                        secondOrder.symbol,
+                        (CommonOrderSide)secondOrder.orderSide,
+                        (CommonOrderType)secondOrder.spotOrderType,
+                        secondOrder.quantity,
+                        (decimal)secondOrder.price);
 
                         if (!secondOrderResponse.Success)
                         {
@@ -142,11 +144,40 @@ namespace BotH.Controllers
                     }
                 }
 
-                while (secondOrderSent) {
+                while (secondOrderSent)
+                {
                     var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                     var secondOrderData = secondOrderInfo.Data;
+                    TimeSpan tsp = new TimeSpan();
+                    tsp = (DateTime.Now - secondOrderData.Timestamp);
 
-                    if (secondOrderData.Status == CommonOrderStatus.Filled) {
+                    if (tsp.Minutes >= 15)
+                    {
+                        await ftxClient.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
+                        message = "Second order was cancelled. Reached time limit.";
+                        //Logic for other sell 
+
+                        var secondOrderReverse = new NewOrder(OrderSide.Sell)
+                        {
+                            symbol = order.buyer,
+                            quantity = quantity,
+                            price = (order.price * Convert.ToDecimal(1.1)),
+                        };
+
+                        var secondOrderReverseResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                     secondOrderReverse.symbol,
+                     (CommonOrderSide)secondOrderReverse.orderSide,
+                     (CommonOrderType)secondOrderReverse.spotOrderType,
+                     secondOrderReverse.quantity,
+                     (decimal)secondOrderReverse.price);
+
+                        secondOrderSent = false;
+
+                        continue;
+                    }
+
+                    if (secondOrderData.Status == CommonOrderStatus.Filled)
+                    {
                         secondOrderSent = false;
                         var thirdOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
                       thirdOrder.symbol,
@@ -204,7 +235,7 @@ namespace BotH.Controllers
                     var counter = 1;
                     if (coinsOrders.Any())
                     {
-                        for (int i = 0; i < coinsOrders.Count ; i++)
+                        for (int i = 0; i < coinsOrders.Count; i++)
                         {
                             var insertCoin = new ReportCoins();
                             insertCoin.CoinName = coin.Name;
@@ -271,7 +302,7 @@ namespace BotH.Controllers
             catch (Exception ex)
             {
                 throw;
-            }         
+            }
         }
 
         [HttpGet]
@@ -319,7 +350,7 @@ namespace BotH.Controllers
                 bool canOperateCandle = false;
 
                 foreach (var coin in coins)
-                {                 
+                {
                     var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
                     var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
                     var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
@@ -375,13 +406,15 @@ namespace BotH.Controllers
                         var coinsState = new List<Candle>();
                         int counter = 0;
 
-                        foreach (var c in mm3Records) {
-                            switch (counter) {
+                        foreach (var c in mm3Records)
+                        {
+                            switch (counter)
+                            {
                                 case 0:
 
                                     break;
                                 case 1:
-                                    coinsState.Add(new Candle() { Order = "Third", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice});
+                                    coinsState.Add(new Candle() { Order = "Third", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice });
                                     break;
                                 case 2:
                                     coinsState.Add(new Candle() { Order = "Second", OpenPrice = c.OpenPrice, ClosePrice = c.ClosePrice });
@@ -395,16 +428,17 @@ namespace BotH.Controllers
 
                         counter = 0;
 
-                        foreach (var it in coinsState) {
+                        foreach (var it in coinsState)
+                        {
                             it.Type = it.OpenPrice > it.ClosePrice ? "Red" : it.OpenPrice < it.ClosePrice ? "Green" : "N/A";
                         }
 
-                        canOperateCandle = !(coinsState.Where(t => t.Type == "Red").Count() == 3 
+                        canOperateCandle = !(coinsState.Where(t => t.Type == "Red").Count() == 3
                             || coinsState.Where(t => t.Type == "Green").Count() == 3);
 
-                        if (perc > (decimal)configuration.ArbitragePercentageValue 
-                            && !openedOrders && DateTime.Now >= date 
-                            && DateTime.Now <= refDate && diff < 53 
+                        if (perc > (decimal)configuration.ArbitragePercentageValue
+                            && !openedOrders && DateTime.Now >= date
+                            && DateTime.Now <= refDate && diff < 53
                             && diffLastPrice < 53 && directionalRatio < 0.4
                             && canOperateCandle)
                         {
@@ -433,10 +467,11 @@ namespace BotH.Controllers
                     var refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
                     var timeToFinish = "OFF";
 
-                    if (DateTime.Now >= date && DateTime.Now <= refDate) {
+                    if (DateTime.Now >= date && DateTime.Now <= refDate)
+                    {
                         TimeSpan ts = refDate - DateTime.Now;
                         timeToFinish = ts.Hours.ToString().PadLeft(2, '0') + ":" + ts.Minutes.ToString().PadLeft(2, '0') + ":" + ts.Seconds.ToString().PadLeft(2, '0');
-                        
+
                     }
 
                     ftxResult.TimeToFinish = timeToFinish;
