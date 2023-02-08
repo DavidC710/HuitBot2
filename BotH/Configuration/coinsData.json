@@ -6,6 +6,13 @@
 			"Secret": "8uWvmB6ho9RXZJG6wr0ycAL3-pGJNnwZ7wbZ8ibw",
 			"ApiKeySub": "tlhIm0gXKQW_zI_2Xu6ImZMI0bm3w612WzZUWros",
 			"SecretSub": "cTlN-0FU6R0HE7xjcbjKzW_PbG2HGF7M6aUijoBq"
+		},
+		{
+			"Exchange": "BINANCE",
+			"ApiKey": "uM7ASQM3sML97IZYJ5BoiXb9CoYikMAK6a9jGRP1S73WIM2Pzc136bAQGorq38No",
+			"Secret": "z6tTKO3cf0o4n5yO8ObiFgRZ3Pao8uiXaKogEdnU1iY3QNy3FjVpwsKxMVmv0ecN"
+			//"ApiKeySub": "tlhIm0gXKQW_zI_2Xu6ImZMI0bm3w612WzZUWros",
+			//"SecretSub": "cTlN-0FU6R0HE7xjcbjKzW_PbG2HGF7M6aUijoBq"
 		}
 	],
 	"Sufixes": [
@@ -27,18 +34,29 @@
 					"Name": "ETH/USDT"
 				}
 			]
+		},
+		{
+			"Exchange": "BINANCE",
+			"ConfigCoins": [
+				{
+					"Name": "BTCUSDT"
+				},
+				{
+					"Name": "ETHUSDT"
+				}
+			]
 		}
 	],
 	"TradeCoins": [
-		{ "Name": "ETH" },
-		{ "Name": "DOT" },
-		{ "Name": "LTC" },
-		{ "Name": "LINK" },
-		{ "Name": "SUSHI" },
-		{ "Name": "XRP" },
-		{ "Name": "AVAX" },
-		{ "Name": "BNB" },
-		{ "Name": "UNI" }
+		{ "Name": "DOGE" },
+		//{ "Name": "DOT" },
+		//{ "Name": "LTC" },
+		//{ "Name": "LINK" },
+		//{ "Name": "SUSHI" },
+		//{ "Name": "XRP" },
+		//{ "Name": "AVAX" },
+		//{ "Name": "BNB" },
+		{ "Name": "BCH" }
 	],
 	"AutomaticProcess_Coins": [
 		{
@@ -48,6 +66,15 @@
 				{ "Name": "DOT" },
 				{ "Name": "XRP" },
 				{ "Name": "AVAX" }
+			]
+		},
+		{
+			"Exchange": "BINANCE",
+			"ConfigCoins": [
+				{ "Name": "DOGE" },
+				//{ "Name": "DOT" },
+				//{ "Name": "XRP" },
+				{ "Name": "BCH" }
 			]
 		}
 	],

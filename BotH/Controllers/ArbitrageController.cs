@@ -1,4 +1,6 @@
 ﻿
+using Binance.Net.Clients;
+
 namespace BotH.Controllers
 {
     [ApiController]
@@ -23,11 +25,23 @@ namespace BotH.Controllers
             try
             {
                 var ordersList = new List<NewOrder>();
-                var mainBaseFTXCoin = configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name;
+                IExchange exchange = IExchange.Binance;
+
+                string mainBaseFTXCoin = IExchange.Binance == exchange ?
+                    configuration.BaseCoins.LastOrDefault()!.ConfigCoins.FirstOrDefault()!.Name! :
+                    configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name!;
+
+
+                //var mainBaseFTXCoin = configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name;
                 var quantity = order.quantity / order.price;
                 ResponseMessage response = new ResponseMessage();
-                var ftxClient = new FTXClient();
-                ftxClient.SetApiCredentials(new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey!, configuration.Exchange_ApiData.FirstOrDefault()!.Secret!));
+                dynamic client = IExchange.Binance == exchange ? new BinanceClient() : new FTXClient();
+
+                var apiCredentials = IExchange.Binance == exchange ?
+                    new ApiCredentials(configuration.Exchange_ApiData.LastOrDefault()!.ApiKey, configuration.Exchange_ApiData.LastOrDefault()!.Secret) :
+                    new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey, configuration.Exchange_ApiData.FirstOrDefault()!.Secret);
+
+                client.SetApiCredentials(apiCredentials);
 
                 var firstOrder = new NewOrder(OrderSide.Buy)
                 {
@@ -90,7 +104,13 @@ namespace BotH.Controllers
 
                 var message = "";
 
-                var firstOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                var firstOrderResponse = IExchange.Binance == exchange ?
+                    await client.SpotApi.Trading.PlaceOrderAsync(firstOrder.symbol,
+                        (CommonOrderSide)firstOrder.orderSide,
+                        (CommonOrderType)firstOrder.spotOrderType,
+                        firstOrder.quantity,
+                        (decimal)firstOrder.price) :
+                    await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                         firstOrder.symbol,
                         (CommonOrderSide)firstOrder.orderSide,
                         (CommonOrderType)firstOrder.spotOrderType,
@@ -108,7 +128,9 @@ namespace BotH.Controllers
 
                 while (firstOrderSent)
                 {
-                    var firstOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
+                    var firstOrderInfo = IExchange.Binance == exchange ?
+                        await client.SpotApi.Trading.GetOrderAsync(firstOrderId) :
+                        await client.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                     var firstOrderData = firstOrderInfo.Data;
 
                     var refDate = DateTime.Now;
@@ -119,7 +141,10 @@ namespace BotH.Controllers
                         firstOrderSent = false;
                         secondOrderSent = false;
 
-                        await ftxClient.TradeApi.CommonSpotClient.CancelOrderAsync(firstOrderId);
+                        var res = IExchange.Binance == exchange ?
+                            await client.SpotApi.Trading.CancelOrderAsync(firstOrderId) :
+                            await client.TradeApi.CommonSpotClient.CancelOrderAsync(firstOrderId);
+
                         message = "First order was cancelled. Reached time limit.";
                     }
 
@@ -127,33 +152,49 @@ namespace BotH.Controllers
                     {
                         firstOrderSent = false;
 
-                        var secondOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                        secondOrder.symbol,
-                        (CommonOrderSide)secondOrder.orderSide,
-                        (CommonOrderType)secondOrder.spotOrderType,
-                        secondOrder.quantity,
-                        (decimal)secondOrder.price);
+                        var secondOrderResp = IExchange.Binance == exchange ?
+                            await client.SpotApi.Trading.PlaceOrderAsync(secondOrder.symbol,
+                                (CommonOrderSide)secondOrder.orderSide,
+                                (CommonOrderType)secondOrder.spotOrderType,
+                                secondOrder.quantity,
+                                (decimal)secondOrder.price) :
+                            await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                                secondOrder.symbol,
+                                (CommonOrderSide)secondOrder.orderSide,
+                                (CommonOrderType)secondOrder.spotOrderType,
+                                secondOrder.quantity,
+                                (decimal)secondOrder.price);
 
-                        if (!secondOrderResponse.Success)
+                        //var secondOrderResponse = await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                        //secondOrder.symbol,
+                        //(CommonOrderSide)secondOrder.orderSide,
+                        //(CommonOrderType)secondOrder.spotOrderType,
+                        //secondOrder.quantity,
+                        //(decimal)secondOrder.price);
+
+                        if (!secondOrderResp.Success)
                         {
-                            response.Message += secondOrderResponse.Error!.ToString() + ". ";
+                            response.Message += secondOrderResp.Error!.ToString() + ". ";
                             return response;
                         }
-                        secondOrderId = secondOrderResponse.Data.Id;
+                        secondOrderId = secondOrderResp.Data.Id;
                         secondOrderSent = true;
                     }
                 }
 
                 while (secondOrderSent)
                 {
-                    var secondOrderInfo = await ftxClient.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
+                    var secondOrderInfo = await client.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                     var secondOrderData = secondOrderInfo.Data;
                     TimeSpan tsp = new TimeSpan();
                     tsp = (DateTime.Now - secondOrderData.Timestamp);
 
                     if (tsp.Minutes >= 15)
                     {
-                        await ftxClient.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
+                        var respo = IExchange.Binance == exchange ?
+                            await client.SpotApi.Trading.CancelOrderAsync(secondOrderId) :
+                            await client.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
+                        
                         message = "Second order was cancelled. Reached time limit.";
                         //Logic for other sell 
 
@@ -164,12 +205,19 @@ namespace BotH.Controllers
                             price = (order.price * Convert.ToDecimal(1.1)),
                         };
 
-                        var secondOrderReverseResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                     secondOrderReverse.symbol,
-                     (CommonOrderSide)secondOrderReverse.orderSide,
-                     (CommonOrderType)secondOrderReverse.spotOrderType,
-                     secondOrderReverse.quantity,
-                     (decimal)secondOrderReverse.price);
+                        var secondOrderReverseResponse = IExchange.Binance == exchange ?
+                            await client.SpotApi.Trading.PlaceOrderAsync(
+                                secondOrderReverse.symbol,
+                                (CommonOrderSide)secondOrderReverse.orderSide,
+                                (CommonOrderType)secondOrderReverse.spotOrderType,
+                                secondOrderReverse.quantity,
+                                (decimal)secondOrderReverse.price) :
+                            await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                                secondOrderReverse.symbol,
+                                (CommonOrderSide)secondOrderReverse.orderSide,
+                                (CommonOrderType)secondOrderReverse.spotOrderType,
+                                secondOrderReverse.quantity,
+                                (decimal)secondOrderReverse.price);
 
                         secondOrderSent = false;
 
@@ -179,12 +227,19 @@ namespace BotH.Controllers
                     if (secondOrderData.Status == CommonOrderStatus.Filled)
                     {
                         secondOrderSent = false;
-                        var thirdOrderResponse = await ftxClient.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                      thirdOrder.symbol,
-                      (CommonOrderSide)thirdOrder.orderSide,
-                      (CommonOrderType)thirdOrder.spotOrderType,
-                      thirdOrder.quantity,
-                      (decimal)thirdOrder.price);
+                        var thirdOrderResponse = IExchange.Binance == exchange ?
+                            await client.SpotApi.Trading.PlaceOrderAsync(
+                                thirdOrder.symbol,
+                                (CommonOrderSide)thirdOrder.orderSide,
+                                (CommonOrderType)thirdOrder.spotOrderType,
+                                thirdOrder.quantity,
+                                (decimal)thirdOrder.price) :
+                            await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                                thirdOrder.symbol,
+                                (CommonOrderSide)thirdOrder.orderSide,
+                                (CommonOrderType)thirdOrder.spotOrderType,
+                                thirdOrder.quantity,
+                                (decimal)thirdOrder.price);
 
                         if (!thirdOrderResponse.Success)
                         {
@@ -311,37 +366,76 @@ namespace BotH.Controllers
             try
             {
                 //await GetDailyReport();
+                IExchange exchange = IExchange.Binance;
                 List<ArbitrageResult> result = new List<ArbitrageResult>();
                 DateTime date = new DateTime(now.Year, now.Month, now.Day, Convert.ToInt16(configuration.StartProcess_Hour), Convert.ToInt16(configuration.StartProcess_Minute), 0);
-                string mainBaseCoinFTX = configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name!;
-                string secondBaseCoinFTX = configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.LastOrDefault()!.Name!;
+                string mainBaseCoinFTX = IExchange.Binance == exchange ?
+                    configuration.BaseCoins.LastOrDefault()!.ConfigCoins.FirstOrDefault()!.Name! :
+                    configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.FirstOrDefault()!.Name!;
+                string secondBaseCoinFTX = IExchange.Binance == exchange ?
+                    configuration.BaseCoins.LastOrDefault()!.ConfigCoins.LastOrDefault()!.Name! :
+                    configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.LastOrDefault()!.Name!;
                 List<Coin> coins = new List<Coin>();
-                FTXClient ftxClient = new FTXClient();
-                ftxClient.SetApiCredentials(new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey, configuration.Exchange_ApiData.FirstOrDefault()!.Secret));
-                var ftxInfo = await ftxClient.TradeApi.ExchangeData.GetSymbolsAsync();
-                IEnumerable<FTXSymbol> coinsDataFTX = ftxInfo.Data;
-                decimal bid_BTDUSDT_FTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == mainBaseCoinFTX)!.BestBidPrice!;
-                decimal bid_ETHUSDT_FTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == secondBaseCoinFTX)!.BestBidPrice!;
-                var page_BTCPrice_FTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == mainBaseCoinFTX)!.LastPrice!;
-                var page_ETHPrice_FTX = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == secondBaseCoinFTX)!.LastPrice!;
+                dynamic client = IExchange.Binance == exchange ? new BinanceClient() : new FTXClient();
 
-                var ftxResult = new ArbitrageResult();
-                ftxResult.Exchange = "ftx";
-                ftxResult.Coins = new List<CoinsList>();
-                ftxResult.BTC = page_BTCPrice_FTX;
-                ftxResult.ETH = page_ETHPrice_FTX;
+                var apiCredentials = IExchange.Binance == exchange ?
+                    new ApiCredentials(configuration.Exchange_ApiData.LastOrDefault()!.ApiKey, configuration.Exchange_ApiData.LastOrDefault()!.Secret) :
+                    new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey, configuration.Exchange_ApiData.FirstOrDefault()!.Secret);
+
+                client.SetApiCredentials(apiCredentials);
+
+                var coinsInfo = IExchange.Binance == exchange ?
+                    await client.SpotApi.ExchangeData.GetTickersAsync() :
+                    await client.TradeApi.ExchangeData.GetSymbolsAsync();
+
+                IEnumerable<dynamic> coinsData = coinsInfo.Data;
+
+                // BINANCE = Symbol -- FTX = Name
+                decimal bid_BTDUSDT = IExchange.Binance == exchange ?
+                    (decimal)coinsData.FirstOrDefault(t => t.Symbol == mainBaseCoinFTX)!.BestBidPrice! :
+                    (decimal)coinsData.FirstOrDefault(t => t.Name == mainBaseCoinFTX)!.BestBidPrice!;
+                decimal bid_ETHUSDT = IExchange.Binance == exchange ?
+                    (decimal)coinsData.FirstOrDefault(t => t.Symbol == secondBaseCoinFTX)!.BestBidPrice! :
+                    (decimal)coinsData.FirstOrDefault(t => t.Name == secondBaseCoinFTX)!.BestBidPrice!;
+
+
+                var page_BTCPrice = IExchange.Binance == exchange ?
+                    (decimal)coinsData.FirstOrDefault(t => t.Symbol == mainBaseCoinFTX)!.LastPrice! :
+                    (decimal)coinsData.FirstOrDefault(t => t.Name == mainBaseCoinFTX)!.LastPrice!;
+                var page_ETHPrice = IExchange.Binance == exchange ?
+                    (decimal)coinsData.FirstOrDefault(t => t.Symbol == secondBaseCoinFTX)!.LastPrice! :
+                    (decimal)coinsData.FirstOrDefault(t => t.Name == secondBaseCoinFTX)!.LastPrice!;
+
+                var arbitrageResult = new ArbitrageResult();
+                arbitrageResult.Exchange = IExchange.Binance == exchange ? "binance" : "ftx";
+                arbitrageResult.Coins = new List<CoinsList>();
+                arbitrageResult.BTC = page_BTCPrice;
+                arbitrageResult.ETH = page_ETHPrice;
 
                 foreach (var orderCoin in configuration.TradeCoins)
                 {
-                    coins.Add(new Coin()
-                    {
-                        Symbol = orderCoin.Name,
-                        BTC = orderCoin.Name + configuration.Sufixes.FirstOrDefault()!.Sufix,
-                        USDT = orderCoin.Name + configuration.Sufixes.LastOrDefault()!.Sufix,
-                        BTCFTX = orderCoin.Name + "/" + configuration.Sufixes.FirstOrDefault()!.Sufix,
-                        USDTFTX = orderCoin.Name + "/" + configuration.Sufixes.LastOrDefault()!.Sufix,
-                        IsAutomatic = configuration.AutomaticProcess_Coins.FirstOrDefault()!.ConfigCoins.Where(t => t.Name == orderCoin.Name).Any(),
-                    });
+                    dynamic addCoin = new Coin();
+                    string concatChar = IExchange.Binance == exchange ? "" : "/";
+
+                    addCoin.Symbol = orderCoin.Name;
+                    addCoin.BTC = orderCoin.Name + configuration.Sufixes.FirstOrDefault()!.Sufix;
+                    addCoin.USDT = orderCoin.Name + configuration.Sufixes.LastOrDefault()!.Sufix;
+                    addCoin.BTCFTX = orderCoin.Name + concatChar + configuration.Sufixes.FirstOrDefault()!.Sufix;
+                    addCoin.USDTFTX = orderCoin.Name + concatChar + configuration.Sufixes.LastOrDefault()!.Sufix;
+                    addCoin.IsAutomatic = IExchange.Binance == exchange ?
+                        configuration.AutomaticProcess_Coins.LastOrDefault()!.ConfigCoins.Where(t => t.Name == orderCoin.Name).Any() :
+                        configuration.AutomaticProcess_Coins.FirstOrDefault()!.ConfigCoins.Where(t => t.Name == orderCoin.Name).Any();
+
+                    coins.Add(addCoin);
+                    //coins.Add(new Coin()
+                    //{
+                    //    Symbol = orderCoin.Name,
+                    //    BTC = orderCoin.Name + configuration.Sufixes.FirstOrDefault()!.Sufix,
+                    //    USDT = orderCoin.Name + configuration.Sufixes.LastOrDefault()!.Sufix,
+                    //    BTCFTX = orderCoin.Name + "/" + configuration.Sufixes.FirstOrDefault()!.Sufix,
+                    //    USDTFTX = orderCoin.Name + "/" + configuration.Sufixes.LastOrDefault()!.Sufix,
+                    //    IsAutomatic = configuration.AutomaticProcess_Coins.FirstOrDefault()!.ConfigCoins.Where(t => t.Name == orderCoin.Name).Any(),
+                    //});
                 }
 
                 decimal diff = 0;
@@ -349,11 +443,21 @@ namespace BotH.Controllers
                 double directionalRatio = 0;
                 bool canOperateCandle = false;
 
+                BinanceClient bClient = new BinanceClient();
+                FTXClient fClient = new FTXClient();
+
+                bClient.SetApiCredentials(apiCredentials);
+                fClient.SetApiCredentials(apiCredentials);
+
                 foreach (var coin in coins)
                 {
-                    var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
-                    var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
-                    var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
+                    var coinBid = IExchange.Binance == exchange ?
+                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestBidPrice! :
+                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
+                    var coinAsk = IExchange.Binance == exchange ?
+                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestAskPrice! :
+                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestAskPrice!;
+                    var calculatedVal = (((1 / coinBid) * coinAsk) / bid_BTDUSDT) > 1 ? (((1 / coinBid) * coinAsk) / bid_BTDUSDT) - 1 : 0;
 
                     if (coin.IsAutomatic)
                     {
@@ -362,9 +466,18 @@ namespace BotH.Controllers
                         directionalRatio = 0;
                         canOperateCandle = false;
 
-                        var opnOrders = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
-                        var ordersBTCInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.BTCFTX);
-                        var ordersUSDTInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.USDTFTX);
+
+                        var opnOrders = IExchange.Binance == exchange ?
+                            await bClient.SpotApi.CommonSpotClient.GetOpenOrdersAsync() :
+                            await fClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
+
+                        var ordersBTCInfo = IExchange.Binance == exchange ?
+                            await bClient.SpotApi.CommonSpotClient.GetOpenOrdersAsync(coin.BTCFTX) :
+                             await fClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.BTCFTX);
+
+                        var ordersUSDTInfo = IExchange.Binance == exchange ?
+                            await bClient.SpotApi.CommonSpotClient.GetOpenOrdersAsync(coin.USDTFTX) :
+                             await fClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync(coin.USDTFTX);
 
                         bool openedOrders = (
                                             ordersBTCInfo.Data.Any() ||
@@ -372,24 +485,36 @@ namespace BotH.Controllers
                                             opnOrders.Data.Where(t => t.Symbol == coin.BTCFTX).Any() ||
                                             opnOrders.Data.Where(t => t.Symbol == coin.USDTFTX).Any())
                                             ? true : false;
-                        decimal perc = Math.Round(((valFTX / 1) * 100), 5);
+                        decimal perc = Math.Round(((calculatedVal / 1) * 100), 5);
                         DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
 
-                        var historicPrices = await ftxClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
-                                FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+                        var historicPricesB = await bClient.SpotApi.ExchangeData.GetKlinesAsync("BTCUSDT",
+                                Binance.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
 
-                        var mm20Records = historicPrices.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
-                        var mm8Records = mm20Records.Take(8);
-                        var mm8 = mm8Records.Sum(t => t.ClosePrice) / mm8Records.Count();
-                        var mm20 = mm20Records.Sum(t => t.ClosePrice) / mm20Records.Count();
-                        var lastPrice = historicPrices.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
-                        var movementSpeed = Convert.ToDouble(Math.Abs((lastPrice!.ClosePrice - mm8Records.LastOrDefault()!.ClosePrice) / mm8Records.Count()));
-                        var standarDeviationRecords = mm20Records.Take(9);
-                        var mm3Records = mm20Records.Take(4);
+                        //var historicPricesF = await fClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
+                        //        FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+
+                        var mm20RecordsB = historicPricesB.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
+                        //var mm20RecordsF = historicPricesF.Data.OrderByDescending(t => t.OpenTime).Take(20).ToList();
+                        var mm8RecordsB = mm20RecordsB.Take(8);
+                        //var mm8RecordsF = mm20RecordsF.Take(8);
+                        var mm8B = mm8RecordsB.Sum(t => t.ClosePrice) / mm8RecordsB.Count();
+                        //var mm8F = mm8RecordsF.Sum(t => t.ClosePrice) / mm8RecordsF.Count();
+                        var mm20B = mm20RecordsB.Sum(t => t.ClosePrice) / mm20RecordsB.Count();
+                        //var mm20F = mm20RecordsF.Sum(t => t.ClosePrice) / mm20RecordsF.Count();
+                        var lastPriceB = historicPricesB.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
+                        //var lastPriceF = historicPricesF.Data.OrderByDescending(t => t.OpenTime).FirstOrDefault();
+                        var movementSpeedB = Convert.ToDouble(Math.Abs((lastPriceB!.ClosePrice - mm8RecordsB.LastOrDefault()!.ClosePrice) / mm8RecordsB.Count()));
+                        //var movementSpeedF = Convert.ToDouble(Math.Abs((lastPriceF!.ClosePrice - mm8RecordsF.LastOrDefault()!.ClosePrice) / mm8RecordsF.Count()));
+                        var standarDeviationRecordsB = mm20RecordsB.Take(9);
+                        //var standarDeviationRecordsF = mm20RecordsF.Take(9);
+                        var mm3RecordsB = mm20RecordsB.Take(4);
+                        //var mm3RecordsF = mm20RecordsF.Take(4);
 
                         var appliedDiffList = new List<double>();
 
-                        var deviationList = standarDeviationRecords.Select(t => Convert.ToDouble(t.ClosePrice)).ToList();
+                        var deviationList = standarDeviationRecordsB.Select(t => Convert.ToDouble(t.ClosePrice)).ToList();
+                        //var deviationListF = standarDeviationRecordsF.Select(t => Convert.ToDouble(t.ClosePrice)).ToList();
                         for (int i = 0; i < deviationList.Count() - 1; i++)
                         {
                             appliedDiffList.Add(deviationList[i + 1] - deviationList[i]);
@@ -398,15 +523,15 @@ namespace BotH.Controllers
                         var organizedList = appliedDiffList.AsEnumerable<double>();
                         var volatility = CalculateStandardDeviation(organizedList);
 
-                        diff = Math.Abs(mm20 - mm8);
-                        var diffVal = mm8 < mm20 ? mm8 : mm20;
+                        diff = Math.Abs(mm20B - mm8B);
+                        var diffVal = mm8B < mm20B ? mm8B : mm20B;
                         var val = (diff / 2) + diffVal;
-                        diffLastPrice = Math.Abs(lastPrice!.ClosePrice - val);
-                        directionalRatio = movementSpeed / volatility;
+                        diffLastPrice = Math.Abs(lastPriceB!.ClosePrice - val);
+                        directionalRatio = movementSpeedB / volatility;
                         var coinsState = new List<Candle>();
                         int counter = 0;
 
-                        foreach (var c in mm3Records)
+                        foreach (var c in mm3RecordsB)
                         {
                             switch (counter)
                             {
@@ -442,59 +567,66 @@ namespace BotH.Controllers
                             && diffLastPrice < 53 && directionalRatio < 0.4
                             && canOperateCandle)
                         {
-                            await CreateOrder(new OrdersInput()
-                            {
-                                seller = coin.USDTFTX,
-                                buyer = coin.BTCFTX,
-                                price = ftxCoinBid,
-                                quantity = configuration.DefaultQuantity,
-                                ask = Math.Round(ftxCoinAsk, 3),
-                                lastPrice = Math.Round(bid_BTDUSDT_FTX, 3),
-                                exchange = "ftx",
-                                percentage = Math.Round(((valFTX / 1) * 100), 5).ToString() + "%",
-                            });
+                            //await CreateOrder(new OrdersInput()
+                            //{
+                            //    seller = coin.USDTFTX,
+                            //    buyer = coin.BTCFTX,
+                            //    price = coinBid,
+                            //    quantity = configuration.DefaultQuantity,
+                            //    ask = Math.Round(coinAsk, 3),
+                            //    lastPrice = Math.Round(bid_BTDUSDT, 3),
+                            //    exchange = "binance",
+                            //    percentage = Math.Round(((calculatedVal / 1) * 100), 5).ToString() + "%",
+                            //});
                         }
                     }
                 }
 
-                var myOrdersInfo = await ftxClient.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
-                var myOrders = myOrdersInfo.Data;
+                var myOrdersInfoB = await bClient.SpotApi.CommonSpotClient.GetOpenOrdersAsync();
+                //var myOrdersInfoF = await client.TradeApi.CommonSpotClient.GetOpenOrdersAsync();
+                var myOrders = myOrdersInfoB.Data;
                 foreach (var coin in coins)
                 {
-                    var ftxCoinBid = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
-                    var ftxCoinAsk = (decimal)coinsDataFTX.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
-                    var valFTX = (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) > 1 ? (((1 / ftxCoinBid) * ftxCoinAsk) / bid_BTDUSDT_FTX) - 1 : 0;
+                    var coinBid = IExchange.Binance == exchange ?
+                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestBidPrice! :
+                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
+                    var coinAsk = IExchange.Binance == exchange ?
+                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.USDTFTX)!.BestAskPrice! :
+                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.USDTFTX)!.BestAskPrice!;
+
+                    var valFTX = (((1 / coinBid) * coinAsk) / bid_BTDUSDT) > 1 ? (((1 / coinBid) * coinAsk) / bid_BTDUSDT) - 1 : 0;
                     var refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
                     var timeToFinish = "OFF";
 
                     if (DateTime.Now >= date && DateTime.Now <= refDate)
                     {
                         TimeSpan ts = refDate - DateTime.Now;
+
                         timeToFinish = ts.Hours.ToString().PadLeft(2, '0') + ":" + ts.Minutes.ToString().PadLeft(2, '0') + ":" + ts.Seconds.ToString().PadLeft(2, '0');
 
                     }
 
-                    ftxResult.TimeToFinish = timeToFinish;
-                    ftxResult.Difference = diff;
-                    ftxResult.LastPriceDifference = diffLastPrice;
-                    ftxResult.DirectionalRatio = directionalRatio;
-                    ftxResult.CandleCanOperate = canOperateCandle;
+                    arbitrageResult.TimeToFinish = timeToFinish;
+                    arbitrageResult.Difference = diff;
+                    arbitrageResult.LastPriceDifference = diffLastPrice;
+                    arbitrageResult.DirectionalRatio = directionalRatio;
+                    arbitrageResult.CandleCanOperate = canOperateCandle;
 
-                    ftxResult.Coins.Add(new CoinsList()
+                    arbitrageResult.Coins.Add(new CoinsList()
                     {
                         Symbol = coin.Symbol,
                         Percentage = Math.Round(((valFTX / 1) * 100), 5).ToString() + "%",
                         BTC = coin.BTCFTX,
                         USDT = coin.USDTFTX,
-                        Price = ftxCoinBid,
+                        Price = coinBid,
                         Quantity = Convert.ToDouble(configuration.DefaultQuantity),
-                        FirstQuantity = Math.Round(ftxCoinAsk, 3),
-                        LastPrice = Math.Round(bid_BTDUSDT_FTX, 3),
+                        FirstQuantity = Math.Round(coinAsk, 3),
+                        LastPrice = Math.Round(bid_BTDUSDT, 3),
                         HasOpendOrders = (myOrders.Where(t => t.Symbol == coin.BTCFTX).Any() || myOrders.Where(t => t.Symbol == coin.USDTFTX).Any()) ? true : false,
                     });
                 }
 
-                result.Add(ftxResult);
+                result.Add(arbitrageResult);
 
                 return result;
 
