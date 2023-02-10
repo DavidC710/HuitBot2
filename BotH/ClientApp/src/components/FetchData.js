@@ -40,6 +40,7 @@ export class FetchData extends Component {
                 .then(response => response.json())
                 .then(response => {
                     console.log(response.message);
+
                     alert(response.message);
                 });
         }

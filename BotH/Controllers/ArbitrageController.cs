@@ -36,12 +36,14 @@ namespace BotH.Controllers
                 var quantity = order.quantity / order.price;
                 ResponseMessage response = new ResponseMessage();
                 dynamic client = IExchange.Binance == exchange ? new BinanceClient() : new FTXClient();
+                BinanceClient clientB = new BinanceClient();
 
                 var apiCredentials = IExchange.Binance == exchange ?
                     new ApiCredentials(configuration.Exchange_ApiData.LastOrDefault()!.ApiKey, configuration.Exchange_ApiData.LastOrDefault()!.Secret) :
                     new ApiCredentials(configuration.Exchange_ApiData.FirstOrDefault()!.ApiKey, configuration.Exchange_ApiData.FirstOrDefault()!.Secret);
 
                 client.SetApiCredentials(apiCredentials);
+                clientB.SetApiCredentials(apiCredentials);
 
                 var firstOrder = new NewOrder(OrderSide.Buy)
                 {
@@ -104,11 +106,13 @@ namespace BotH.Controllers
 
                 var message = "";
 
+
                 var firstOrderResponse = IExchange.Binance == exchange ?
-                    await client.SpotApi.Trading.PlaceOrderAsync(firstOrder.symbol,
-                        (CommonOrderSide)firstOrder.orderSide,
-                        (CommonOrderType)firstOrder.spotOrderType,
-                        firstOrder.quantity,
+                    await clientB.SpotApi.Trading.PlaceOrderAsync(firstOrder.symbol,
+                        (OrderSide)firstOrder.orderSide,
+                        (SpotOrderType)firstOrder.spotOrderType,
+                        quantity : firstOrder.quantity,
+                        null, null,
                         (decimal)firstOrder.price) :
                     await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                         firstOrder.symbol,
@@ -156,7 +160,7 @@ namespace BotH.Controllers
                             await client.SpotApi.Trading.PlaceOrderAsync(secondOrder.symbol,
                                 (CommonOrderSide)secondOrder.orderSide,
                                 (CommonOrderType)secondOrder.spotOrderType,
-                                secondOrder.quantity,
+                                secondOrder.quantity, null, null,
                                 (decimal)secondOrder.price) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 secondOrder.symbol,
@@ -184,8 +188,11 @@ namespace BotH.Controllers
 
                 while (secondOrderSent)
                 {
-                    var secondOrderInfo = await client.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
+                    var secondOrderInfo = IExchange.Binance == exchange ?
+                        await client.SpotApi.Trading.GetOrderAsync(secondOrderId) :
+                        await client.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                     var secondOrderData = secondOrderInfo.Data;
+
                     TimeSpan tsp = new TimeSpan();
                     tsp = (DateTime.Now - secondOrderData.Timestamp);
 
@@ -210,7 +217,7 @@ namespace BotH.Controllers
                                 secondOrderReverse.symbol,
                                 (CommonOrderSide)secondOrderReverse.orderSide,
                                 (CommonOrderType)secondOrderReverse.spotOrderType,
-                                secondOrderReverse.quantity,
+                                secondOrderReverse.quantity, null, null,
                                 (decimal)secondOrderReverse.price) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 secondOrderReverse.symbol,
@@ -232,7 +239,7 @@ namespace BotH.Controllers
                                 thirdOrder.symbol,
                                 (CommonOrderSide)thirdOrder.orderSide,
                                 (CommonOrderType)thirdOrder.spotOrderType,
-                                thirdOrder.quantity,
+                                thirdOrder.quantity, null, null,
                                 (decimal)thirdOrder.price) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 thirdOrder.symbol,
@@ -561,24 +568,24 @@ namespace BotH.Controllers
                         canOperateCandle = !(coinsState.Where(t => t.Type == "Red").Count() == 3
                             || coinsState.Where(t => t.Type == "Green").Count() == 3);
 
-                        if (perc > (decimal)configuration.ArbitragePercentageValue
-                            && !openedOrders && DateTime.Now >= date
-                            && DateTime.Now <= refDate && diff < 53
-                            && diffLastPrice < 53 && directionalRatio < 0.4
-                            && canOperateCandle)
-                        {
-                            //await CreateOrder(new OrdersInput()
-                            //{
-                            //    seller = coin.USDTFTX,
-                            //    buyer = coin.BTCFTX,
-                            //    price = coinBid,
-                            //    quantity = configuration.DefaultQuantity,
-                            //    ask = Math.Round(coinAsk, 3),
-                            //    lastPrice = Math.Round(bid_BTDUSDT, 3),
-                            //    exchange = "binance",
-                            //    percentage = Math.Round(((calculatedVal / 1) * 100), 5).ToString() + "%",
-                            //});
-                        }
+                        //if (perc > (decimal)configuration.ArbitragePercentageValue
+                        //    && !openedOrders && DateTime.Now >= date
+                        //    && DateTime.Now <= refDate && diff < 53
+                        //    && diffLastPrice < 53 && directionalRatio < 0.4
+                        //    && canOperateCandle)
+                        //{
+                            await CreateOrder(new OrdersInput()
+                            {
+                                seller = coin.USDTFTX,
+                                buyer = coin.BTCFTX,
+                                price = coinBid,
+                                quantity = configuration.DefaultQuantity,
+                                ask = Math.Round(coinAsk, 3),
+                                lastPrice = Math.Round(bid_BTDUSDT, 3),
+                                exchange = "binance",
+                                percentage = Math.Round(((calculatedVal / 1) * 100), 5).ToString() + "%",
+                            });
+                        //}
                     }
                 }
 
