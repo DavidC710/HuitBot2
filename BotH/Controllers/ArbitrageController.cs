@@ -197,41 +197,41 @@ namespace BotH.Controllers
                     var secondRefDate = DateTime.Now;
                     TimeSpan tsp = secondRefDate - secondOrderTime;
 
-                    if (tsp.Minutes >= 15)
-                    {
-                        var respo = IExchange.Binance == exchange ?
-                            await client.SpotApi.Trading.CancelOrderAsync(secondOrder.symbol, secondOrderId) :
-                            await client.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
+                    //if (tsp.Minutes >= 15)
+                    //{
+                    //    var respo = IExchange.Binance == exchange ?
+                    //        await client.SpotApi.Trading.CancelOrderAsync(secondOrder.symbol, secondOrderId) :
+                    //        await client.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
                         
-                        message = "Second order was cancelled. Reached time limit.";
-                        //Logic for other sell 
+                    //    message = "Second order was cancelled. Reached time limit.";
+                    //    //Logic for other sell 
 
-                        var secondOrderReverse = new NewOrder(OrderSide.Sell)
-                        {
-                            symbol = order.buyer,
-                            quantity = quantity,
-                            price = (order.price * Convert.ToDecimal(1.1)),
-                        };
+                    //    var secondOrderReverse = new NewOrder(OrderSide.Sell)
+                    //    {
+                    //        symbol = order.buyer,
+                    //        quantity = quantity,
+                    //        price = (order.price * Convert.ToDecimal(1.1)),
+                    //    };
 
-                        var secondOrderReverseResponse = IExchange.Binance == exchange ?
-                            await client.SpotApi.Trading.PlaceOrderAsync(
-                                secondOrderReverse.symbol,
-                                (OrderSide)secondOrderReverse.orderSide,
-                                (SpotOrderType)secondOrderReverse.spotOrderType,
-                                secondOrderReverse.quantity, null, null,
-                                (decimal)secondOrderReverse.price,
-                                secondOrderReverse.timeInForce) :
-                            await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
-                                secondOrderReverse.symbol,
-                                (CommonOrderSide)secondOrderReverse.orderSide,
-                                (CommonOrderType)secondOrderReverse.spotOrderType,
-                                secondOrderReverse.quantity,
-                                (decimal)secondOrderReverse.price);
+                    //    var secondOrderReverseResponse = IExchange.Binance == exchange ?
+                    //        await client.SpotApi.Trading.PlaceOrderAsync(
+                    //            secondOrderReverse.symbol,
+                    //            (OrderSide)secondOrderReverse.orderSide,
+                    //            (SpotOrderType)secondOrderReverse.spotOrderType,
+                    //            secondOrderReverse.quantity, null, null,
+                    //            (decimal)secondOrderReverse.price,
+                    //            secondOrderReverse.timeInForce) :
+                    //        await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
+                    //            secondOrderReverse.symbol,
+                    //            (CommonOrderSide)secondOrderReverse.orderSide,
+                    //            (CommonOrderType)secondOrderReverse.spotOrderType,
+                    //            secondOrderReverse.quantity,
+                    //            (decimal)secondOrderReverse.price);
 
-                        secondOrderSent = false;
+                    //    secondOrderSent = false;
 
-                        continue;
-                    }
+                    //    continue;
+                    //}
 
                     if (secondOrderData.Status == OrderStatus.Filled)
                     {
