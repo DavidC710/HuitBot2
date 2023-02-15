@@ -48,14 +48,14 @@ namespace BotH.Controllers
                 var firstOrder = new NewOrder(OrderSide.Buy)
                 {
                     symbol = order.buyer,
-                    quantity = quantity,
+                    quantity = Math.Round(quantity),
                     price = order.price,
                 };
 
                 var secondOrder = new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = quantity,
+                    quantity = Math.Round(quantity),
                     price = order.ask
                 };
 
@@ -69,14 +69,14 @@ namespace BotH.Controllers
                 ordersList.Add(new NewOrder(OrderSide.Buy)
                 {
                     symbol = order.buyer,
-                    quantity = quantity,
+                    quantity = Math.Round(quantity),
                     price = order.price,
                 });
 
                 ordersList.Add(new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = quantity,
+                    quantity = Math.Round(quantity),
                     price = order.ask
                 });
 
@@ -99,8 +99,8 @@ namespace BotH.Controllers
                 //    if (!orderResponse.Success) response.Message += orderResponse.Error!.ToString() + ". ";
                 //}
 
-                var firstOrderId = string.Empty;
-                var secondOrderId = string.Empty;
+                long firstOrderId = 0;
+                long secondOrderId = 0;
                 var firstOrderSent = false;
                 var secondOrderSent = false;
 
@@ -113,7 +113,8 @@ namespace BotH.Controllers
                         (SpotOrderType)firstOrder.spotOrderType,
                         quantity : firstOrder.quantity,
                         null, null,
-                        (decimal)firstOrder.price) :
+                        (decimal)firstOrder.price,
+                        firstOrder.timeInForce) :
                     await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                         firstOrder.symbol,
                         (CommonOrderSide)firstOrder.orderSide,
@@ -129,11 +130,10 @@ namespace BotH.Controllers
                 var firstOrderTime = DateTime.Now;
                 firstOrderId = firstOrderResponse.Data.Id;
                 firstOrderSent = true;
-
                 while (firstOrderSent)
                 {
                     var firstOrderInfo = IExchange.Binance == exchange ?
-                        await client.SpotApi.Trading.GetOrderAsync(firstOrderId) :
+                        await client.SpotApi.Trading.GetOrderAsync(firstOrder.symbol, firstOrderId) :
                         await client.TradeApi.CommonSpotClient.GetOrderAsync(firstOrderId);
                     var firstOrderData = firstOrderInfo.Data;
 
@@ -146,22 +146,23 @@ namespace BotH.Controllers
                         secondOrderSent = false;
 
                         var res = IExchange.Binance == exchange ?
-                            await client.SpotApi.Trading.CancelOrderAsync(firstOrderId) :
+                            await client.SpotApi.Trading.CancelOrderAsync(firstOrder.symbol, firstOrderId) :
                             await client.TradeApi.CommonSpotClient.CancelOrderAsync(firstOrderId);
 
                         message = "First order was cancelled. Reached time limit.";
                     }
 
-                    if (firstOrderData.Status == CommonOrderStatus.Filled)
+                    if (firstOrderData.Status == OrderStatus.Filled)
                     {
                         firstOrderSent = false;
 
                         var secondOrderResp = IExchange.Binance == exchange ?
                             await client.SpotApi.Trading.PlaceOrderAsync(secondOrder.symbol,
-                                (CommonOrderSide)secondOrder.orderSide,
-                                (CommonOrderType)secondOrder.spotOrderType,
+                                (OrderSide)secondOrder.orderSide,
+                                (SpotOrderType)secondOrder.spotOrderType,
                                 secondOrder.quantity, null, null,
-                                (decimal)secondOrder.price) :
+                                (decimal)secondOrder.price,
+                                secondOrder.timeInForce) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 secondOrder.symbol,
                                 (CommonOrderSide)secondOrder.orderSide,
@@ -185,21 +186,21 @@ namespace BotH.Controllers
                         secondOrderSent = true;
                     }
                 }
-
+                var secondOrderTime = DateTime.Now;
                 while (secondOrderSent)
                 {
                     var secondOrderInfo = IExchange.Binance == exchange ?
-                        await client.SpotApi.Trading.GetOrderAsync(secondOrderId) :
+                        await client.SpotApi.Trading.GetOrderAsync(secondOrder.symbol, secondOrderId) :
                         await client.TradeApi.CommonSpotClient.GetOrderAsync(secondOrderId);
                     var secondOrderData = secondOrderInfo.Data;
 
-                    TimeSpan tsp = new TimeSpan();
-                    tsp = (DateTime.Now - secondOrderData.Timestamp);
+                    var secondRefDate = DateTime.Now;
+                    TimeSpan tsp = secondRefDate - secondOrderTime;
 
                     if (tsp.Minutes >= 15)
                     {
                         var respo = IExchange.Binance == exchange ?
-                            await client.SpotApi.Trading.CancelOrderAsync(secondOrderId) :
+                            await client.SpotApi.Trading.CancelOrderAsync(secondOrder.symbol, secondOrderId) :
                             await client.TradeApi.CommonSpotClient.CancelOrderAsync(secondOrderId);
                         
                         message = "Second order was cancelled. Reached time limit.";
@@ -215,10 +216,11 @@ namespace BotH.Controllers
                         var secondOrderReverseResponse = IExchange.Binance == exchange ?
                             await client.SpotApi.Trading.PlaceOrderAsync(
                                 secondOrderReverse.symbol,
-                                (CommonOrderSide)secondOrderReverse.orderSide,
-                                (CommonOrderType)secondOrderReverse.spotOrderType,
+                                (OrderSide)secondOrderReverse.orderSide,
+                                (SpotOrderType)secondOrderReverse.spotOrderType,
                                 secondOrderReverse.quantity, null, null,
-                                (decimal)secondOrderReverse.price) :
+                                (decimal)secondOrderReverse.price,
+                                secondOrderReverse.timeInForce) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 secondOrderReverse.symbol,
                                 (CommonOrderSide)secondOrderReverse.orderSide,
@@ -231,16 +233,17 @@ namespace BotH.Controllers
                         continue;
                     }
 
-                    if (secondOrderData.Status == CommonOrderStatus.Filled)
+                    if (secondOrderData.Status == OrderStatus.Filled)
                     {
                         secondOrderSent = false;
                         var thirdOrderResponse = IExchange.Binance == exchange ?
                             await client.SpotApi.Trading.PlaceOrderAsync(
                                 thirdOrder.symbol,
-                                (CommonOrderSide)thirdOrder.orderSide,
-                                (CommonOrderType)thirdOrder.spotOrderType,
+                                (OrderSide)thirdOrder.orderSide,
+                                (SpotOrderType)thirdOrder.spotOrderType,
                                 thirdOrder.quantity, null, null,
-                                (decimal)thirdOrder.price) :
+                                (decimal)thirdOrder.price,
+                                thirdOrder.timeInForce) :
                             await client.TradeApi.CommonSpotClient.PlaceOrderAsync(
                                 thirdOrder.symbol,
                                 (CommonOrderSide)thirdOrder.orderSide,
@@ -462,8 +465,8 @@ namespace BotH.Controllers
                         (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestBidPrice! :
                         (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
                     var coinAsk = IExchange.Binance == exchange ?
-                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestAskPrice! :
-                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestAskPrice!;
+                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.USDT)!.BestAskPrice! :
+                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.USDT)!.BestAskPrice!;
                     var calculatedVal = (((1 / coinBid) * coinAsk) / bid_BTDUSDT) > 1 ? (((1 / coinBid) * coinAsk) / bid_BTDUSDT) - 1 : 0;
 
                     if (coin.IsAutomatic)
@@ -568,24 +571,27 @@ namespace BotH.Controllers
                         canOperateCandle = !(coinsState.Where(t => t.Type == "Red").Count() == 3
                             || coinsState.Where(t => t.Type == "Green").Count() == 3);
 
-                        //if (perc > (decimal)configuration.ArbitragePercentageValue
-                        //    && !openedOrders && DateTime.Now >= date
-                        //    && DateTime.Now <= refDate && diff < 53
-                        //    && diffLastPrice < 53 && directionalRatio < 0.4
-                        //    && canOperateCandle)
-                        //{
+                        if (
+                            //perc > (decimal)configuration.ArbitragePercentageValue && 
+                            !openedOrders 
+                            //DateTime.Now >= date &&
+                            //DateTime.Now <= refDate && diff < 53 &&
+                            //diffLastPrice < 53 && 
+                            //directionalRatio < 0.4 && canOperateCandle
+                            )
+                        {
                             await CreateOrder(new OrdersInput()
                             {
                                 seller = coin.USDTFTX,
                                 buyer = coin.BTCFTX,
                                 price = coinBid,
                                 quantity = configuration.DefaultQuantity,
-                                ask = Math.Round(coinAsk, 3),
-                                lastPrice = Math.Round(bid_BTDUSDT, 3),
+                                ask = coinAsk,
+                                lastPrice = bid_BTDUSDT,
                                 exchange = "binance",
                                 percentage = Math.Round(((calculatedVal / 1) * 100), 5).ToString() + "%",
                             });
-                        //}
+                        }
                     }
                 }
 
