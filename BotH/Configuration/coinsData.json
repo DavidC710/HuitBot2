@@ -49,7 +49,7 @@
 	],
 	"TradeCoins": [
 		{ "Name": "DOGE" },
-		//{ "Name": "DOT" },
+		{ "Name": "ANKR" },
 		//{ "Name": "LTC" },
 		//{ "Name": "LINK" },
 		//{ "Name": "SUSHI" },
@@ -71,10 +71,10 @@
 		{
 			"Exchange": "BINANCE",
 			"ConfigCoins": [
-				{ "Name": "DOGE" },
+				{ "Name": "ANKR" }
 				//{ "Name": "DOT" },
 				//{ "Name": "XRP" },
-				{ "Name": "BCH" }
+				//{ "Name": "BCH" }
 			]
 		}
 	],
@@ -82,7 +82,7 @@
 	"StartProcess_Hour": "01",
 	"StartProcess_Minute": "30",
 	"DefaultQuantity": 0.0005,
-	"ArbitragePercentageValue": 0.10,
+	"ArbitragePercentageValue": 0.16,
 	"BTCLoop_Duration": 5,
 	"BTCLoopStart_Hour": "08",
 	"BTCLoopStart_Minute": "16",

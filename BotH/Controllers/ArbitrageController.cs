@@ -55,7 +55,7 @@ namespace BotH.Controllers
                 var secondOrder = new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = Math.Round(quantity),
+                    quantity = Math.Round(quantity) - 1,
                     price = order.ask
                 };
 
@@ -387,6 +387,9 @@ namespace BotH.Controllers
                     configuration.BaseCoins.FirstOrDefault()!.ConfigCoins.LastOrDefault()!.Name!;
                 List<Coin> coins = new List<Coin>();
                 dynamic client = IExchange.Binance == exchange ? new BinanceClient() : new FTXClient();
+                BinanceClient bClient = new BinanceClient();
+                FTXClient fClient = new FTXClient();
+                //var ttt= await bClient.SpotApi.ExchangeData.GetExchangeInfoAsync();
 
                 var apiCredentials = IExchange.Binance == exchange ?
                     new ApiCredentials(configuration.Exchange_ApiData.LastOrDefault()!.ApiKey, configuration.Exchange_ApiData.LastOrDefault()!.Secret) :
@@ -452,9 +455,6 @@ namespace BotH.Controllers
                 decimal diffLastPrice = 0;
                 double directionalRatio = 0;
                 bool canOperateCandle = false;
-
-                BinanceClient bClient = new BinanceClient();
-                FTXClient fClient = new FTXClient();
 
                 bClient.SetApiCredentials(apiCredentials);
                 fClient.SetApiCredentials(apiCredentials);

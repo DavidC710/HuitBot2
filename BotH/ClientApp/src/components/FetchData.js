@@ -20,7 +20,7 @@ export class FetchData extends Component {
     }
 
     componentDidMount() {
-        this.interval = setInterval(() => this.populateCoinsData(), 5000);
+        this.interval = setInterval(() => this.populateCoinsData(), 20000);
     }
 
     componentWillUnmount() {
