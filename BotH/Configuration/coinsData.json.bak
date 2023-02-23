@@ -20,7 +20,7 @@
 			"Sufix": "BTC"
 		},
 		{
-			"Sufix": "BUSD"
+			"Sufix": "USDT"
 		}
 	],
 	"BaseCoins": [
@@ -28,10 +28,10 @@
 			"Exchange": "FTX",
 			"ConfigCoins": [
 				{
-					"Name": "BTC/BUSD"
+					"Name": "BTC/USDT"
 				},
 				{
-					"Name": "ETH/BUSD"
+					"Name": "ETH/USDT"
 				}
 			]
 		},
@@ -39,10 +39,10 @@
 			"Exchange": "BINANCE",
 			"ConfigCoins": [
 				{
-					"Name": "BTCBUSD"
+					"Name": "BTCUSDT"
 				},
 				{
-					"Name": "ETHBUSD"
+					"Name": "ETHUSDT"
 				}
 			]
 		}
