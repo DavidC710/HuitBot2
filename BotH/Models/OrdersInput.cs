@@ -10,5 +10,6 @@
         public decimal lastPrice { get; set; }
         public string exchange { get; set; }
         public string percentage { get; set; }
+        public decimal coinDecimals { get; set; }
     }
 }

@@ -1,5 +1,7 @@
 ﻿
 using Binance.Net.Clients;
+using Binance.Net.Interfaces;
+using Binance.Net.Objects.Models.Spot;
 
 namespace BotH.Controllers
 {
@@ -13,7 +15,7 @@ namespace BotH.Controllers
 
         public ArbitrageController()
         {
-            string path = @"D:\Documents\Repos\BotH\BotH\Configuration\coinsData.json";
+            string path = @"D:\Documents\Repos\BotH_BUSD\BotH\Configuration\coinsData.json";
             this.configuration = JsonConvert.DeserializeObject<Root>(System.IO.File.ReadAllText(path))!;
             now = DateTime.Today;
         }
@@ -48,14 +50,14 @@ namespace BotH.Controllers
                 var firstOrder = new NewOrder(OrderSide.Buy)
                 {
                     symbol = order.buyer,
-                    quantity = Math.Round(quantity),
+                    quantity = Math.Round(quantity, Convert.ToInt16(order.coinDecimals)),
                     price = order.price,
                 };
 
                 var secondOrder = new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = Math.Round(quantity) - 1,
+                    quantity = Math.Round(quantity, Convert.ToInt16(order.coinDecimals)) - 1,
                     price = order.ask
                 };
 
@@ -397,9 +399,7 @@ namespace BotH.Controllers
 
                 client.SetApiCredentials(apiCredentials);
 
-                var coinsInfo = IExchange.Binance == exchange ?
-                    await client.SpotApi.ExchangeData.GetTickersAsync() :
-                    await client.TradeApi.ExchangeData.GetSymbolsAsync();
+                var coinsInfo = await bClient.SpotApi.ExchangeData.GetTickersAsync();
 
                 IEnumerable<dynamic> coinsData = coinsInfo.Data;
 
@@ -461,12 +461,14 @@ namespace BotH.Controllers
 
                 foreach (var coin in coins)
                 {
-                    var coinBid = IExchange.Binance == exchange ?
-                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)!.BestBidPrice! :
-                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!.BestBidPrice!;
-                    var coinAsk = IExchange.Binance == exchange ?
-                        (decimal)coinsData.FirstOrDefault(t => t.Symbol == coin.USDT)!.BestAskPrice! :
-                        (decimal)coinsData.FirstOrDefault(t => t.Name == coin.USDT)!.BestAskPrice!;
+                    IBinanceTick coinBidI = IExchange.Binance == exchange ?
+                        coinsData.FirstOrDefault(t => t.Symbol == coin.BTCFTX)! :
+                        coinsData.FirstOrDefault(t => t.Name == coin.BTCFTX)!;
+                    var coinBid = coinBidI!.BestBidPrice!;
+                    IBinanceTick coinAskI = IExchange.Binance == exchange ?
+                        coinsData.FirstOrDefault(t => t.Symbol == coin.USDT)! :
+                        coinsData.FirstOrDefault(t => t.Name == coin.USDT)!;
+                    var coinAsk = coinAskI!.BestAskPrice!;
                     var calculatedVal = (((1 / coinBid) * coinAsk) / bid_BTDUSDT) > 1 ? (((1 / coinBid) * coinAsk) / bid_BTDUSDT) - 1 : 0;
 
                     if (coin.IsAutomatic)
@@ -499,7 +501,7 @@ namespace BotH.Controllers
                         DateTime refDate = date.AddMinutes(Convert.ToInt16(configuration.AutomaticProcess_Duration));
 
                         var historicPricesB = await bClient.SpotApi.ExchangeData.GetKlinesAsync("BTCUSDT",
-                                Binance.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
+                                KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
 
                         //var historicPricesF = await fClient.TradeApi.ExchangeData.GetKlinesAsync("BTC/USDT",
                         //        FTX.Net.Enums.KlineInterval.FifteenMinutes, DateTime.Today.Date, DateTime.Today.Date.AddHours(24));
@@ -572,7 +574,7 @@ namespace BotH.Controllers
                             || coinsState.Where(t => t.Type == "Green").Count() == 3);
 
                         if (
-                            //perc > (decimal)configuration.ArbitragePercentageValue && 
+                            perc > (decimal)configuration.ArbitragePercentageValue &&
                             !openedOrders 
                             //DateTime.Now >= date &&
                             //DateTime.Now <= refDate && diff < 53 &&
@@ -580,6 +582,12 @@ namespace BotH.Controllers
                             //directionalRatio < 0.4 && canOperateCandle
                             )
                         {
+                            var decimalNumb = coinBidI.BestAskQuantity.ToString("0.########");
+                            int decimalQuantity = 0;
+
+                            var cut = decimalNumb != null ? decimalNumb.Replace(",", ".").Split('.') : new string[0];
+                            if (cut.Count() > 1) decimalQuantity = Convert.ToInt32(cut[1].Length);
+
                             await CreateOrder(new OrdersInput()
                             {
                                 seller = coin.USDTFTX,
@@ -590,6 +598,7 @@ namespace BotH.Controllers
                                 lastPrice = bid_BTDUSDT,
                                 exchange = "binance",
                                 percentage = Math.Round(((calculatedVal / 1) * 100), 5).ToString() + "%",
+                                coinDecimals = decimalQuantity
                             });
                         }
                     }

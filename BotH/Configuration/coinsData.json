@@ -49,7 +49,7 @@
 	],
 	"TradeCoins": [
 		{ "Name": "DOGE" },
-		{ "Name": "ANKR" },
+		{ "Name": "OP" },
 		//{ "Name": "LTC" },
 		//{ "Name": "LINK" },
 		//{ "Name": "SUSHI" },
@@ -71,7 +71,7 @@
 		{
 			"Exchange": "BINANCE",
 			"ConfigCoins": [
-				{ "Name": "ANKR" }
+				{ "Name": "OP" }
 				//{ "Name": "DOT" },
 				//{ "Name": "XRP" },
 				//{ "Name": "BCH" }
