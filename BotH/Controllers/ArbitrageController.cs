@@ -15,7 +15,7 @@ namespace BotH.Controllers
 
         public ArbitrageController()
         {
-            string path = @"D:\Documents\Repos\BotH_BUSD\BotH\Configuration\coinsData.json";
+            string path = @"C:\Users\ThermalTake\source\repos\HuitBot2\HuitBot2\BotH\Configuration\coinsData.json";
             this.configuration = JsonConvert.DeserializeObject<Root>(System.IO.File.ReadAllText(path))!;
             now = DateTime.Today;
         }
@@ -57,7 +57,7 @@ namespace BotH.Controllers
                 var secondOrder = new NewOrder(OrderSide.Sell)
                 {
                     symbol = order.seller,
-                    quantity = Math.Round(quantity, Convert.ToInt16(order.coinDecimals)) - 1,
+                    quantity = Math.Round(quantity, Convert.ToInt16(order.coinDecimals)),
                     price = order.ask
                 };
 
@@ -142,7 +142,7 @@ namespace BotH.Controllers
                     var refDate = DateTime.Now;
                     TimeSpan ts = refDate - firstOrderTime;
 
-                    if (ts.Minutes >= 15)
+                    if (ts.Seconds >= 30)
                     {
                         firstOrderSent = false;
                         secondOrderSent = false;

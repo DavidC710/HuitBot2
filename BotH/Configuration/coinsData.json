@@ -48,15 +48,15 @@
 		}
 	],
 	"TradeCoins": [
-		{ "Name": "DOGE" },
-		{ "Name": "OP" },
-		//{ "Name": "LTC" },
+		{ "Name": "IMX" },
+		{ "Name": "YFI" },
+		//{ "Name": "STX" },
 		//{ "Name": "LINK" },
 		//{ "Name": "SUSHI" },
 		//{ "Name": "XRP" },
 		//{ "Name": "AVAX" },
 		//{ "Name": "BNB" },
-		{ "Name": "BCH" }
+		//{ "Name": "BCH" }
 	],
 	"AutomaticProcess_Coins": [
 		{
@@ -71,18 +71,18 @@
 		{
 			"Exchange": "BINANCE",
 			"ConfigCoins": [
-				{ "Name": "OP" }
-				//{ "Name": "DOT" },
-				//{ "Name": "XRP" },
-				//{ "Name": "BCH" }
+				{ "Name": "YFI" },
+			  { "Name": "IMX" },
+			//{ "Name": "STX" },
+			//{ "Name": "ZRX" }
 			]
 		}
 	],
 	"AutomaticProcess_Duration": 210,
 	"StartProcess_Hour": "01",
 	"StartProcess_Minute": "30",
-	"DefaultQuantity": 0.0005,
-	"ArbitragePercentageValue": 0.16,
+	"DefaultQuantity": 0.004,
+	"ArbitragePercentageValue": 0.15,
 	"BTCLoop_Duration": 5,
 	"BTCLoopStart_Hour": "08",
 	"BTCLoopStart_Minute": "16",
