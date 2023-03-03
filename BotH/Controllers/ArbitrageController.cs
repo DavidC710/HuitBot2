@@ -147,11 +147,14 @@ namespace BotH.Controllers
                         firstOrderSent = false;
                         secondOrderSent = false;
 
-                        var res = IExchange.Binance == exchange ?
+                        if (firstOrderData.Status != OrderStatus.PartiallyFilled)
+                        {
+                            var res = IExchange.Binance == exchange ?
                             await client.SpotApi.Trading.CancelOrderAsync(firstOrder.symbol, firstOrderId) :
                             await client.TradeApi.CommonSpotClient.CancelOrderAsync(firstOrderId);
 
-                        message = "First order was cancelled. Reached time limit.";
+                            message = "First order was cancelled. Reached time limit.";
+                        }                        
                     }
 
                     if (firstOrderData.Status == OrderStatus.Filled)
